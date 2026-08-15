@@ -125,10 +125,11 @@ This confirms your order was received — no payment has been charged yet, since
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        // resend.dev is Resend's built-in test sender — no domain
-        // verification needed, same one already used for the SMTP login
-        // codes. Swap this to a verified sender on your own domain
-        // (e.g. orders@realaminos.com) once one is set up in Resend.
+        // shoprealaminos.com is verified in Resend (SPF/DKIM), so we send
+        // from our own domain instead of the onboarding@resend.dev test
+        // sender. The 2FA/login-code emails use a separate address
+        // (2fa@shoprealaminos.com) configured directly in Supabase's SMTP
+        // settings, not here.
         from: "RealAminos <confirmation@shoprealaminos.com>",
         to: input.toEmail,
         subject: `Order Confirmed — #${input.orderNumber}`,

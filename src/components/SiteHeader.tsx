@@ -39,6 +39,7 @@ export default function SiteHeader({ userEmail }: { userEmail: string | null }) 
             <Link href="/lab">Lab Testing</Link>
             <Link href="/ruo-policy">RUO Policy</Link>
             <Link href="/faq">FAQ</Link>
+            <Link href="/support">Support</Link>
           </nav>
           <div className="nav-actions">
             {userEmail ? (

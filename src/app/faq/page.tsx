@@ -21,7 +21,7 @@ const FAQS = [
   },
   {
     q: "What is your return policy?",
-    a: 'Because our products are peptides and amino acids with strict temperature and environmental sensitivities, we cannot accept returns or refunds for change-of-mind or order errors. We do accept returns and exchanges for products that arrive damaged, broken, defective, or incorrect — contact us at info@whitetanksautoglass.com within 14 days of delivery with your order number and photos, and once verified we\'ll replace the item or issue a refund. See our full Refund & Return Policy page for details on lost shipments, exchanges, and chargebacks.',
+    a: 'Because our products are peptides and amino acids with strict temperature and environmental sensitivities, we cannot accept returns or refunds for change-of-mind or order errors. We do accept returns and exchanges for products that arrive damaged, broken, defective, or incorrect — contact us at support@shoprealaminos.com within 14 days of delivery with your order number and photos, and once verified we\'ll replace the item or issue a refund. See our full Refund & Return Policy page for details on lost shipments, exchanges, and chargebacks.',
   },
   {
     q: "Can I get bulk or institutional pricing?",

@@ -82,8 +82,8 @@ export default function AboutPage() {
           </p>
           <p style={{ marginTop: 24 }}>
             Questions for us directly? Reach out any time at{" "}
-            <a href="mailto:info@whitetanksautoglass.com" style={{ color: "var(--orange-dark)", fontWeight: 700 }}>
-              info@whitetanksautoglass.com
+            <a href="mailto:support@shoprealaminos.com" style={{ color: "var(--orange-dark)", fontWeight: 700 }}>
+              support@shoprealaminos.com
             </a>
             , or browse our <Link href="/shop" style={{ color: "var(--orange-dark)", fontWeight: 700 }}>current catalog</Link>.
           </p>

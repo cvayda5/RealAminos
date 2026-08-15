@@ -35,7 +35,8 @@ export default function SiteFooter() {
         </div>
         <div>
           <h5>Contact</h5>
-          <a href="mailto:info@whitetanksautoglass.com">info@whitetanksautoglass.com</a>
+          <Link href="/support">Support</Link>
+          <a href="mailto:support@shoprealaminos.com">support@shoprealaminos.com</a>
           <span style={{ display: "block", fontSize: 13.5, color: "#9aa5b1", marginBottom: 9 }}>
             Surprise, Arizona
           </span>
