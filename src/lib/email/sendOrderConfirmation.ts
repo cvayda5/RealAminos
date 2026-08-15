@@ -129,7 +129,7 @@ This confirms your order was received — no payment has been charged yet, since
         // verification needed, same one already used for the SMTP login
         // codes. Swap this to a verified sender on your own domain
         // (e.g. orders@realaminos.com) once one is set up in Resend.
-        from: "RealAminos <onboarding@resend.dev>",
+        from: "RealAminos <confirmation@shoprealaminos.com>",
         to: input.toEmail,
         subject: `Order Confirmed — #${input.orderNumber}`,
         text,
