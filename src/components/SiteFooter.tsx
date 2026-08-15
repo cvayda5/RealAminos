@@ -18,6 +18,9 @@ export default function SiteFooter() {
           <p style={{ fontSize: 12.5, color: "#9aa5b1", lineHeight: 1.6, maxWidth: 280, marginTop: 10 }}>
             Firefighter-owned. Founded by a father &amp; son team.
           </p>
+          <p style={{ fontSize: 12.5, color: "#9aa5b1", lineHeight: 1.6, maxWidth: 280, marginTop: 10 }}>
+            Surprise, Arizona
+          </p>
         </div>
         <div>
           <h5>Shop</h5>
@@ -32,14 +35,11 @@ export default function SiteFooter() {
           <Link href="/refund-policy">Refund Policy</Link>
           <Link href="/legal">Purchaser Agreement</Link>
           <Link href="/faq">FAQ</Link>
+          <Link href="/support">Support</Link>
         </div>
         <div>
           <h5>Contact</h5>
-          <Link href="/support">Support</Link>
           <a href="mailto:support@shoprealaminos.com">support@shoprealaminos.com</a>
-          <span style={{ display: "block", fontSize: 13.5, color: "#9aa5b1", marginBottom: 9 }}>
-            Surprise, Arizona
-          </span>
         </div>
       </div>
       <div className="footer-legal">
