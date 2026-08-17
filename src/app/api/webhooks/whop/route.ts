@@ -64,8 +64,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, alreadyProcessed: true });
   }
 
-  const isSuccess = eventType === "payment.succeeded";
-  const isFailure = eventType === "payment.failed" || eventType === "payment.expired";
+  const isSuccess = eventType === "payment_succeeded";
+  const isFailure = eventType === "payment_failed";
 
   if (isSuccess) {
     await finalizeOrder(pending, admin);
