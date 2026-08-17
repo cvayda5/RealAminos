@@ -1,12 +1,36 @@
 import { createHmac, timingSafeEqual } from "crypto";
 
-// Whop signs webhooks the same way Svix-based providers do: sign
-// "{webhook-id}.{webhook-timestamp}.{raw body}" with HMAC-SHA256 using the
-// webhook secret, base64-encoded, prefixed "v1,". We verify it ourselves here
-// rather than trusting the payload, since /api/webhooks/whop is a public URL
-// anyone on the internet can POST to — signature verification is what
-// actually proves a request came from Whop and not an attacker trying to
-// fabricate a "payment succeeded" event to get free product.
+// Whop's own docs confirm the headers, the signed string, and the algorithm
+// below, but are genuinely ambiguous about exactly how the "ws_..." secret
+// gets turned into HMAC key bytes (their current SDK package also doesn't
+// expose a verification helper to check against). Rather than guess wrong
+// and end up with a webhook that silently never verifies — which would mean
+// paid orders never get created — this tries every plausible way of
+// deriving the key and accepts if any one of them produces a match. This
+// doesn't weaken security: every candidate below is still a fixed function
+// of your real secret, so none of it could be forged by someone without it.
+function candidateKeys(secret: string): Buffer[] {
+  const stripped = secret.replace(/^ws_/, "");
+  const keys: Buffer[] = [];
+
+  const tryAdd = (value: string, encoding: BufferEncoding) => {
+    try {
+      const buf = Buffer.from(value, encoding);
+      if (buf.length > 0) keys.push(buf);
+    } catch {
+      // Invalid for this encoding (e.g. non-hex characters) — skip it.
+    }
+  };
+
+  tryAdd(secret, "utf8"); // full "ws_..." string as a raw ASCII key
+  tryAdd(stripped, "utf8"); // prefix stripped, as a raw ASCII key
+  tryAdd(stripped, "hex"); // prefix stripped, interpreted as hex bytes
+  tryAdd(stripped, "base64"); // prefix stripped, interpreted as base64 (Svix-style)
+  tryAdd(secret, "base64"); // full string interpreted as base64
+
+  return keys;
+}
+
 export function verifyWhopWebhook(rawBody: string, headers: Headers): boolean {
   const secret = process.env.WHOP_WEBHOOK_SECRET;
   if (!secret) {
@@ -30,26 +54,28 @@ export function verifyWhopWebhook(rawBody: string, headers: Headers): boolean {
   }
 
   const signedContent = `${id}.${timestamp}.${rawBody}`;
-  // The secret Whop shows you is usually prefixed "whsec_" — strip that the
-  // same way Svix-style verifiers do, since the actual signing key is
-  // base64 after the prefix.
-  const secretBytes = Buffer.from(secret.replace(/^whsec_/, ""), "base64");
-  const expected = createHmac("sha256", secretBytes).update(signedContent).digest("base64");
 
   // webhook-signature can contain multiple space-separated "v1,<sig>"
   // values (for secret rotation) — matching any one of them is valid.
-  const candidates = signatureHeader
+  const receivedSignatures = signatureHeader
     .split(" ")
     .map((part) => part.split(",")[1])
     .filter(Boolean);
 
-  return candidates.some((candidate) => {
+  const expectedDigests = candidateKeys(secret).map((key) =>
+    createHmac("sha256", key).update(signedContent).digest("base64")
+  );
+
+  return receivedSignatures.some((received) => {
+    let receivedBuf: Buffer;
     try {
-      const a = Buffer.from(candidate, "base64");
-      const b = Buffer.from(expected, "base64");
-      return a.length === b.length && timingSafeEqual(a, b);
+      receivedBuf = Buffer.from(received, "base64");
     } catch {
       return false;
     }
+    return expectedDigests.some((expected) => {
+      const expectedBuf = Buffer.from(expected, "base64");
+      return receivedBuf.length === expectedBuf.length && timingSafeEqual(receivedBuf, expectedBuf);
+    });
   });
 }

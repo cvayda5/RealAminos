@@ -64,6 +64,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, alreadyProcessed: true });
   }
 
+  // Whop's actual event names use underscores (confirmed directly from the
+  // webhook subscription UI), not the dotted names some docs pages show.
   const isSuccess = eventType === "payment_succeeded";
   const isFailure = eventType === "payment_failed";
 
@@ -73,7 +75,7 @@ export async function POST(request: Request) {
     await refundReservations(pending, admin);
     await admin.from("pending_checkouts").update({ status: "failed" }).eq("id", pending.id);
   }
-  // Any other event type (payment.created, payment.pending, etc.) — nothing
+  // Any other event type (payment_created, payment_pending, etc.) — nothing
   // to do yet, just acknowledge.
 
   return NextResponse.json({ ok: true });
