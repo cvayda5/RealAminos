@@ -132,7 +132,12 @@ export default function CartDrawer() {
     setError(null);
     setPlacing(true);
 
-    const res = await fetch("/api/orders", {
+    // Kicks off a Whop-hosted checkout rather than creating the order
+    // directly — the cart/points reservations aren't touched at all here.
+    // The real order only gets created once Whop confirms payment via
+    // webhook (see /api/webhooks/whop); this just redirects the browser to
+    // go pay.
+    const res = await fetch("/api/checkout/whop", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -148,21 +153,17 @@ export default function CartDrawer() {
       }),
     });
 
-    setPlacing(false);
+    const body = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      setError(body.error ?? "Something went wrong placing the order.");
+      setPlacing(false);
+      setError(body.error ?? "Something went wrong starting checkout.");
       return;
     }
 
-    clear();
-    setWaiverChecked(false);
-    setShipping(EMPTY_SHIPPING);
-    removeDiscount();
-    setStep("cart");
-    closeDrawer();
-    router.push("/account/orders");
+    // Full redirect (not client-side navigation) — this is leaving the site
+    // entirely to go pay on Whop's hosted checkout page.
+    window.location.href = body.purchaseUrl;
   }
 
   function handleClose() {
@@ -306,8 +307,8 @@ export default function CartDrawer() {
           <form onSubmit={handlePlaceOrder} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
             <div className="drawer-body">
               <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
-                No payment processor is connected yet, but we still need to know where to ship
-                your order.
+                We just need to know where this ships to — you&apos;ll enter payment details on
+                the next screen.
               </p>
 
               <label htmlFor="ship-name">Full Name</label>
@@ -419,7 +420,7 @@ export default function CartDrawer() {
                   Back to Cart
                 </button>
                 <button type="submit" className="btn" style={{ flex: 2 }} disabled={placing}>
-                  {placing ? "Placing order…" : "Place Order"}
+                  {placing ? "Redirecting to payment…" : "Continue to Payment"}
                 </button>
               </div>
               {error && <p className="error">{error}</p>}

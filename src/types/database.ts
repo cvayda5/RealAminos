@@ -148,6 +148,32 @@ export interface AffiliateSignup {
   created_at: string;
 }
 
+// A checkout in flight through Whop — see 0010_whop_checkout.sql and
+// src/app/api/checkout/whop/route.ts. Frozen pricing, not recomputed once
+// the webhook finalizes it into a real order.
+export interface PendingCheckout {
+  id: string;
+  user_id: string;
+  items: {
+    productName: string;
+    size: string;
+    qty: number;
+    unitPrice: number;
+    pointTransactionId?: string;
+  }[];
+  shipping: ShippingDetails;
+  discount_code: string | null;
+  discount_percent: number;
+  subtotal: number;
+  shipping_fee: number;
+  total: number;
+  points_redeemed: number;
+  reward_tx_ids: string[];
+  status: "pending" | "completed" | "failed";
+  whop_checkout_id: string | null;
+  created_at: string;
+}
+
 // Shape the checkout form/API posts — see src/app/api/orders/route.ts
 export interface NewOrderPayload {
   items: {
