@@ -14,9 +14,16 @@
 // with these scopes: create/read checkout configurations, create/read
 // checkout requests, read payments, read changes to payments.
 //
-// WHOP_COMPANY_ID is your Whop business id (format "biz_..."), visible in
-// the dashboard's URL. WHOP_PRODUCT_ID is the one generic product's id
-// (format "prod_..." or "pass_..."), created once by hand in the dashboard.
+// WHOP_PRODUCT_ID is the one generic product's id (format "prod_..." or
+// "pass_..."), created once by hand in the dashboard.
+//
+// NOTE: company_id is deliberately NOT sent in the request body below, even
+// though Whop's schema lists it as a field. A live 400 from Whop's API
+// ("Cannot provide company_id for this configuration") confirmed that a
+// "Company" API key (scoped to one business, which is what we're using)
+// already implies its own company — explicitly passing company_id is
+// apparently only valid for a different key type ("App" keys, which can act
+// across multiple companies). Passing it caused a hard rejection.
 const WHOP_API_BASE = "https://api.whop.com/api/v1";
 
 interface CreateCheckoutParams {
@@ -38,14 +45,10 @@ export async function createWhopCheckout({
   metadata,
 }: CreateCheckoutParams): Promise<CreateCheckoutResult> {
   const apiKey = process.env.WHOP_API_KEY;
-  const companyId = process.env.WHOP_COMPANY_ID;
   const productId = process.env.WHOP_PRODUCT_ID;
 
   if (!apiKey) {
     throw new Error("WHOP_API_KEY is not set.");
-  }
-  if (!companyId) {
-    throw new Error("WHOP_COMPANY_ID is not set.");
   }
   if (!productId) {
     throw new Error("WHOP_PRODUCT_ID is not set.");
@@ -58,9 +61,7 @@ export async function createWhopCheckout({
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      company_id: companyId,
       plan: {
-        company_id: companyId,
         product_id: productId,
         plan_type: "one_time",
         initial_price: amount,
