@@ -64,10 +64,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, alreadyProcessed: true });
   }
 
-  // Whop's actual event names use underscores (confirmed directly from the
-  // webhook subscription UI), not the dotted names some docs pages show.
-  const isSuccess = eventType === "payment_succeeded";
-  const isFailure = eventType === "payment_failed";
+  // Whop's webhook subscription UI shows underscored event names
+  // (payment_succeeded / payment_failed), but a real live webhook call
+  // confirmed the actual JSON payload's `type` field uses dots instead
+  // (payment.succeeded / payment.failed). Checking both formats defensively
+  // means this keeps working regardless of which one Whop actually sends for
+  // a given event, or if that ever changes.
+  const normalizedEventType = eventType?.replace(/\./g, "_");
+  const isSuccess = normalizedEventType === "payment_succeeded";
+  const isFailure = normalizedEventType === "payment_failed";
 
   if (isSuccess) {
     await finalizeOrder(pending, admin);
