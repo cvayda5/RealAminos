@@ -1,15 +1,23 @@
-// Thin wrapper around Whop's checkout API. Whop is organized around a
-// "plan" object rather than a free-form cart total, but it supports creating
-// an inline, one-time plan at request time (instead of a pre-created
-// dashboard product) — that's what lets us pass a server-computed dollar
-// amount here instead of pointing at a fixed-price product configured ahead
-// of time in the Whop dashboard.
+// Thin wrapper around Whop's checkout API. Whop's data model requires every
+// "plan" (a price) to belong to a "product" (what Whop's dashboard calls an
+// Access Pass) and to a company — there's no way to charge an arbitrary
+// dollar amount with no product behind it at all. Rather than pre-creating a
+// separate Whop product for every SKU we sell (which would mean keeping two
+// catalogs in sync), we point every checkout at ONE generic product created
+// once in the Whop dashboard, and override the price inline via the plan's
+// initial_price on every request — the actual line-item breakdown the
+// customer sees came from our own cart/checkout UI before they ever got to
+// Whop, so the single generic product name on Whop's side doesn't matter.
 //
 // WHOP_API_KEY is a server-only secret (Bearer token) — never expose this in
 // client code. Create one at your Whop dashboard's Developer > API Keys page
 // with these scopes: create/read checkout configurations, create/read
 // checkout requests, read payments, read changes to payments.
-const WHOP_API_BASE = "https://api.whop.com/v5";
+//
+// WHOP_COMPANY_ID is your Whop business id (format "biz_..."), visible in
+// the dashboard's URL. WHOP_PRODUCT_ID is the one generic product's id
+// (format "prod_..." or "pass_..."), created once by hand in the dashboard.
+const WHOP_API_BASE = "https://api.whop.com/api/v1";
 
 interface CreateCheckoutParams {
   amount: number; // dollars, e.g. 42.50
@@ -30,8 +38,17 @@ export async function createWhopCheckout({
   metadata,
 }: CreateCheckoutParams): Promise<CreateCheckoutResult> {
   const apiKey = process.env.WHOP_API_KEY;
+  const companyId = process.env.WHOP_COMPANY_ID;
+  const productId = process.env.WHOP_PRODUCT_ID;
+
   if (!apiKey) {
     throw new Error("WHOP_API_KEY is not set.");
+  }
+  if (!companyId) {
+    throw new Error("WHOP_COMPANY_ID is not set.");
+  }
+  if (!productId) {
+    throw new Error("WHOP_PRODUCT_ID is not set.");
   }
 
   const res = await fetch(`${WHOP_API_BASE}/checkout_configurations`, {
@@ -41,7 +58,10 @@ export async function createWhopCheckout({
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
+      company_id: companyId,
       plan: {
+        company_id: companyId,
+        product_id: productId,
         plan_type: "one_time",
         initial_price: amount,
         currency,
