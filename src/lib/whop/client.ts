@@ -15,15 +15,15 @@
 // checkout requests, read payments, read changes to payments.
 //
 // WHOP_PRODUCT_ID is the one generic product's id (format "prod_..." or
-// "pass_..."), created once by hand in the dashboard.
+// "pass_..."), created once by hand in the dashboard. WHOP_COMPANY_ID is
+// your Whop business id (format "biz_..."), visible in the dashboard's URL.
 //
-// NOTE: company_id is deliberately NOT sent in the request body below, even
-// though Whop's schema lists it as a field. A live 400 from Whop's API
-// ("Cannot provide company_id for this configuration") confirmed that a
-// "Company" API key (scoped to one business, which is what we're using)
-// already implies its own company — explicitly passing company_id is
-// apparently only valid for a different key type ("App" keys, which can act
-// across multiple companies). Passing it caused a hard rejection.
+// NOTE on company_id placement: two live errors from Whop's API pinned this
+// down exactly. Sending company_id at the request's TOP LEVEL got rejected
+// ("Cannot provide company_id for this configuration") — but omitting it
+// entirely then got rejected too ("Missing required parameter:
+// plan.company_id"). So it's required, but only nested inside the plan
+// object, not at the top level.
 const WHOP_API_BASE = "https://api.whop.com/api/v1";
 
 interface CreateCheckoutParams {
@@ -46,12 +46,16 @@ export async function createWhopCheckout({
 }: CreateCheckoutParams): Promise<CreateCheckoutResult> {
   const apiKey = process.env.WHOP_API_KEY;
   const productId = process.env.WHOP_PRODUCT_ID;
+  const companyId = process.env.WHOP_COMPANY_ID;
 
   if (!apiKey) {
     throw new Error("WHOP_API_KEY is not set.");
   }
   if (!productId) {
     throw new Error("WHOP_PRODUCT_ID is not set.");
+  }
+  if (!companyId) {
+    throw new Error("WHOP_COMPANY_ID is not set.");
   }
 
   const res = await fetch(`${WHOP_API_BASE}/checkout_configurations`, {
@@ -62,6 +66,7 @@ export async function createWhopCheckout({
     },
     body: JSON.stringify({
       plan: {
+        company_id: companyId,
         product_id: productId,
         plan_type: "one_time",
         initial_price: amount,
