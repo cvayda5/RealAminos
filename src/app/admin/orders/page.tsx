@@ -69,6 +69,9 @@ export default async function AdminOrdersPage() {
             <Link href="/admin/staff" className="btn btn-outline">
               Manage Staff
             </Link>
+            <Link href="/admin/inventory" className="btn btn-outline">
+              Inventory
+            </Link>
           </div>
         </div>
 

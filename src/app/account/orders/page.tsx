@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus, OrderWithItems } from "@/types/database";
-import PlaceTestOrderForm from "./PlaceTestOrderForm";
 
 const STEPS: OrderStatus[] = ["Processing", "Shipped", "Delivered"];
 
@@ -30,15 +29,6 @@ export default async function OrdersPage() {
     <main className="site-main">
       <div className="wrap">
         <h1>My Orders</h1>
-
-        <div className="card">
-          <strong>Place a test order</strong>
-          <p style={{ fontSize: 13, color: "var(--muted)" }}>
-            No payment processor is wired up yet — this bypasses the shop and just proves the
-            orders table and RLS policies work end to end.
-          </p>
-          <PlaceTestOrderForm defaultEmail={user.email} />
-        </div>
 
         {error && <p className="error">{error.message}</p>}
         {orders?.length === 0 && <p style={{ color: "var(--muted)" }}>No orders yet — try the Shop.</p>}

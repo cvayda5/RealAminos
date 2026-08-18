@@ -27,6 +27,11 @@ export interface ProductVariant {
   size: string;
   price: number;
   sort_order: number;
+  // Units on hand for this exact product+size. 0 means "out of stock —
+  // coming soon" on the storefront — see /admin/inventory, where staff set
+  // this by hand, and 0011_inventory.sql's decrement_variant_stock(), which
+  // lowers it automatically every time a real order finalizes.
+  stock: number;
 }
 
 export interface ProductWithVariants extends Product {
@@ -155,6 +160,7 @@ export interface PendingCheckout {
   id: string;
   user_id: string;
   items: {
+    productId: string;
     productName: string;
     size: string;
     qty: number;
@@ -174,9 +180,16 @@ export interface PendingCheckout {
   created_at: string;
 }
 
-// Shape the checkout form/API posts — see src/app/api/orders/route.ts
+// Shape the cart posts to checkout — see src/app/api/checkout/whop/route.ts
 export interface NewOrderPayload {
   items: {
+    // For a normal paid line this is the product's id (product_variants is
+    // then looked up by productId + size). For a reward line redeemed with
+    // points this is actually the *variant's* id instead — see
+    // RedeemProductGrid.tsx, which only ever has the variant id on hand
+    // when it builds the cart line. src/lib/inventory/resolveVariant.ts is
+    // what untangles the two shapes back into one real variant either way.
+    productId: string;
     productName: string;
     size: string;
     qty: number;

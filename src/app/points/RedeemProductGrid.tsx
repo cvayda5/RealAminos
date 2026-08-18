@@ -78,7 +78,8 @@ export default function RedeemProductGrid({
               <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
                 {product.product_variants.map((v) => {
                   const cost = pointsCostFor(v.price);
-                  const canAfford = balance >= cost;
+                  const outOfStock = v.stock <= 0;
+                  const canAfford = balance >= cost && !outOfStock;
                   return (
                     <div
                       key={v.id}
@@ -97,10 +98,16 @@ export default function RedeemProductGrid({
                         className="btn-add"
                         disabled={!canAfford || redeemingId === v.id}
                         onClick={() => handleRedeem(v.id)}
-                        title={canAfford ? undefined : `Need ${cost} points — you have ${balance}`}
+                        title={
+                          outOfStock
+                            ? "Out of stock — coming soon"
+                            : canAfford
+                              ? undefined
+                              : `Need ${cost} points — you have ${balance}`
+                        }
                         style={!canAfford ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
                       >
-                        {redeemingId === v.id ? "Adding…" : `${cost} pts`}
+                        {redeemingId === v.id ? "Adding…" : outOfStock ? "Out of Stock" : `${cost} pts`}
                       </button>
                     </div>
                   );

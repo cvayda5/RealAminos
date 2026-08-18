@@ -9,6 +9,10 @@ import { createHmac, timingSafeEqual } from "crypto";
 // deriving the key and accepts if any one of them produces a match. This
 // doesn't weaken security: every candidate below is still a fixed function
 // of your real secret, so none of it could be forged by someone without it.
+//
+// Confirmed working in production via Whop's "Test webhook" feature and a
+// real webhook delivery, both verified successfully (200, not 401) — no
+// further debugging needed here.
 function candidateKeys(secret: string): Buffer[] {
   const stripped = secret.replace(/^ws_/, "");
   const keys: Buffer[] = [];
@@ -38,17 +42,11 @@ export function verifyWhopWebhook(rawBody: string, headers: Headers): boolean {
     return false;
   }
 
-  // TEMPORARY DIAGNOSTIC LOGGING — dump every header Whop actually sent, so
-  // we can see the real shape of a request before assuming our parsing of it
-  // is right. Remove once verification is confirmed working.
-  console.log("[whop webhook] all headers:", JSON.stringify(Object.fromEntries(headers.entries())));
-
   const id = headers.get("webhook-id");
   const timestamp = headers.get("webhook-timestamp");
   const signatureHeader = headers.get("webhook-signature");
 
   if (!id || !timestamp || !signatureHeader) {
-    console.log("[whop webhook] missing one of the three signature headers", { id, timestamp, signatureHeader });
     return false;
   }
 
@@ -57,7 +55,6 @@ export function verifyWhopWebhook(rawBody: string, headers: Headers): boolean {
   const timestampSeconds = Number(timestamp);
   const ageSeconds = Math.abs(Date.now() / 1000 - timestampSeconds);
   if (!Number.isFinite(timestampSeconds) || ageSeconds > 300) {
-    console.log("[whop webhook] timestamp rejected", { timestamp, ageSeconds });
     return false;
   }
 
@@ -73,14 +70,6 @@ export function verifyWhopWebhook(rawBody: string, headers: Headers): boolean {
   const expectedDigests = candidateKeys(secret).map((key) =>
     createHmac("sha256", key).update(signedContent).digest("base64")
   );
-
-  console.log("[whop webhook] diagnostic", {
-    signedContent,
-    receivedSignatures,
-    expectedDigests,
-    secretLength: secret.length,
-    numCandidateKeys: candidateKeys(secret).length,
-  });
 
   return receivedSignatures.some((received) => {
     let receivedBuf: Buffer;

@@ -11,6 +11,7 @@ interface VariantRow {
   id: string;
   size: string;
   price: number;
+  stock: number;
   product_id: string;
   products: { name: string; is_active: boolean } | null;
 }
@@ -43,12 +44,16 @@ export async function POST(request: Request) {
   // the shop.
   const { data: variant, error: variantError } = await supabase
     .from("product_variants")
-    .select("id, size, price, product_id, products(name, is_active)")
+    .select("id, size, price, stock, product_id, products(name, is_active)")
     .eq("id", variantId)
     .single<VariantRow>();
 
   if (variantError || !variant || !variant.products?.is_active) {
     return NextResponse.json({ error: "That product is no longer available." }, { status: 404 });
+  }
+
+  if (variant.stock <= 0) {
+    return NextResponse.json({ error: "That size is currently out of stock." }, { status: 400 });
   }
 
   // Redeeming costs 10 points per dollar of the vial's current price — a

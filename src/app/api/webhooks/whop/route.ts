@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { PendingCheckout } from "@/types/database";
 import { sendOrderConfirmationEmail } from "@/lib/email/sendOrderConfirmation";
 import { verifyWhopWebhook } from "@/lib/whop/verifyWebhook";
+import { resolveVariant } from "@/lib/inventory/resolveVariant";
 
 // POST /api/webhooks/whop — the only place a Whop-paid checkout actually
 // turns into a real order. This is a public URL (anyone on the internet can
@@ -145,6 +146,30 @@ async function finalizeOrder(pending: PendingCheckout, admin: ReturnType<typeof 
       order_id: order.id,
       description: `Order ${order.order_number}`,
     });
+  }
+
+  // Stock only ever actually moves here, once a payment is truly confirmed
+  // — /api/checkout/whop already checked stock before sending the customer
+  // to pay, but this is the one place a purchase is guaranteed to have
+  // really happened, so it's the right place to permanently deduct it.
+  // Uses the same product_id+size (or, for a reward line, straight variant
+  // id) resolution as the checkout-time check, then the race-safe SQL
+  // function from 0011_inventory.sql rather than a read-then-write from
+  // here, so two simultaneous orders can't both read the same stock number
+  // and double-count the decrement.
+  for (const item of pending.items) {
+    const variant = await resolveVariant(admin, item);
+    if (!variant) {
+      console.error("Whop webhook: could not resolve a variant to decrement stock for", pending.id, item);
+      continue;
+    }
+    const { error: decrementError } = await admin.rpc("decrement_variant_stock", {
+      p_variant_id: variant.id,
+      p_qty: item.qty,
+    });
+    if (decrementError) {
+      console.error("Whop webhook: failed to decrement stock", pending.id, item, decrementError.message);
+    }
   }
 
   await admin.from("pending_checkouts").update({ status: "completed" }).eq("id", pending.id);

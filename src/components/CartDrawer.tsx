@@ -142,6 +142,7 @@ export default function CartDrawer() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         items: items.map((i) => ({
+          productId: i.productId,
           productName: i.productName,
           size: i.size,
           qty: i.qty,

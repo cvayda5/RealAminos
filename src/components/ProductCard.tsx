@@ -2,7 +2,15 @@ import Link from "next/link";
 import type { ProductWithVariants } from "@/types/database";
 
 export default function ProductCard({ product }: { product: ProductWithVariants }) {
-  const lowPrice = Math.min(...product.product_variants.map((v) => v.price));
+  const inStock = product.product_variants.filter((v) => v.stock > 0);
+  const comingSoon = inStock.length === 0;
+  // Price "from" the cheapest size that's actually buyable — falls back to
+  // the cheapest size overall only when nothing at all is in stock, purely
+  // so the card still shows a plausible number under the "Coming Soon" label.
+  const priceFrom = (inStock.length > 0 ? inStock : product.product_variants).reduce(
+    (min, v) => Math.min(min, v.price),
+    Infinity
+  );
 
   return (
     <div className="pcard">
@@ -18,9 +26,15 @@ export default function ProductCard({ product }: { product: ProductWithVariants 
         </Link>
         {product.cas_number && <div className="cas">CAS {product.cas_number}</div>}
         <div className="row-bottom">
-          <div className="price">
-            ${lowPrice.toFixed(2)} <small>from</small>
-          </div>
+          {comingSoon ? (
+            <div className="price" style={{ color: "var(--muted)" }}>
+              Coming Soon
+            </div>
+          ) : (
+            <div className="price">
+              ${priceFrom.toFixed(2)} <small>from</small>
+            </div>
+          )}
           <Link href={`/shop/${product.id}`} className="btn-add">
             View
           </Link>

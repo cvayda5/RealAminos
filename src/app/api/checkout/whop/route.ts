@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { NewOrderPayload, PointTransaction } from "@/types/database";
 import { calculateShippingFee } from "@/lib/shipping/rate";
 import { createWhopCheckout } from "@/lib/whop/client";
+import { resolveVariant } from "@/lib/inventory/resolveVariant";
 
 // POST /api/checkout/whop — validates the cart exactly the way /api/orders
 // does (same reservation checks, same server-side discount/shipping/price
@@ -45,12 +46,43 @@ export async function POST(request: Request) {
     );
   }
 
-  // Same reservation re-verification as /api/orders — still belongs to this
-  // user, still un-spent, un-voided. We don't link these to anything yet
-  // (that only happens once payment is confirmed), just confirm they're
+  const admin = createAdminClient();
+
+  // Check real stock before sending anyone to pay — this is what actually
+  // enforces "Out of Stock — Coming Soon" on the storefront rather than that
+  // just being a UI suggestion. Re-checked here (not trusted from whatever
+  // the browser last saw) since stock can change between page load and
+  // checkout. This isn't a hold/reservation the way redeemed points are —
+  // it's a point-in-time check — so the same units can still be sold out
+  // from under a slow checkout between this check and the customer actually
+  // paying; the webhook's decrement floors at 0 rather than going negative
+  // for exactly that reason.
+  for (const item of body.items) {
+    const variant = await resolveVariant(admin, item);
+    if (!variant) {
+      return NextResponse.json(
+        { error: `${item.productName} (${item.size}) is no longer available.` },
+        { status: 400 }
+      );
+    }
+    if (variant.stock < item.qty) {
+      return NextResponse.json(
+        {
+          error:
+            variant.stock === 0
+              ? `${item.productName} (${item.size}) is currently out of stock.`
+              : `Only ${variant.stock} left of ${item.productName} (${item.size}) — lower the quantity in your cart.`,
+        },
+        { status: 400 }
+      );
+    }
+  }
+
+  // Same reservation re-verification as before payment: still belongs to
+  // this user, still un-spent, un-voided. We don't link these to anything
+  // yet (that only happens once payment is confirmed), just confirm they're
   // still valid to spend right now.
   const rewardTxIds = [...new Set(body.items.map((i) => i.pointTransactionId).filter(Boolean))] as string[];
-  const admin = createAdminClient();
   const reservationById = new Map<string, PointTransaction>();
 
   if (rewardTxIds.length > 0) {
