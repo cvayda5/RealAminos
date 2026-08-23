@@ -2,10 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useCart } from "@/lib/cart/CartContext";
 import { createClient } from "@/lib/supabase/client";
 import type { ShippingDetails } from "@/types/database";
 import { calculateShippingFee, FREE_SHIPPING_THRESHOLD } from "@/lib/shipping/rate";
+
+// Kept in sync by eye with ZELLE_DISCOUNT_RATE in
+// src/app/api/checkout/zelle/route.ts — this is display-only (the server
+// recomputes the real discount itself), so a mismatch here would just show
+// the wrong preview number, not actually charge the wrong amount.
+const ZELLE_DISCOUNT_PERCENT = 5;
+
+interface ZelleOrderResult {
+  orderNumber: string;
+  amountDue: number;
+}
 
 const EMPTY_SHIPPING: ShippingDetails = {
   name: "",
@@ -26,11 +38,21 @@ export default function CartDrawer() {
   const [error, setError] = useState<string | null>(null);
 
   // 'cart' shows the line items + waiver. 'shipping' collects where the
-  // order actually ships to. There's no payment processor wired up yet, but
-  // every real order still needs a real destination, so this step is
-  // required before the order is created.
-  const [step, setStep] = useState<"cart" | "shipping">("cart");
+  // order actually ships to. 'payment' is where the customer picks Card
+  // (Whop) or Zelle — once shipping info is in, the order number they'd
+  // need for a Zelle payment note can be generated (Zelle creates the real
+  // order immediately; Card still just redirects to Whop).
+  const [step, setStep] = useState<"cart" | "shipping" | "payment">("cart");
   const [shipping, setShipping] = useState<ShippingDetails>(EMPTY_SHIPPING);
+
+  // Which payment method is selected on the 'payment' step, and — once
+  // Zelle has actually created its (unpaid) order — the result of that,
+  // cached here so flipping back and forth between Card/Zelle doesn't
+  // create a second order.
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "zelle" | null>(null);
+  const [zelleOrder, setZelleOrder] = useState<ZelleOrderResult | null>(null);
+  const [zelleLoading, setZelleLoading] = useState(false);
+  const [zelleError, setZelleError] = useState<string | null>(null);
 
   // Discount code — "applied" only ever reflects what the server confirmed
   // via /api/discount-codes/validate. The percent shown here is purely
@@ -127,8 +149,28 @@ export default function CartDrawer() {
     setStep("shipping");
   }
 
-  async function handlePlaceOrder(e: React.FormEvent) {
+  // Shipping form submit no longer places the order directly — it just
+  // moves on to picking a payment method, since Zelle needs to create its
+  // (unpaid) order right at selection time rather than at a final submit.
+  function handleContinueToPayment(e: React.FormEvent) {
     e.preventDefault();
+    setStep("payment");
+  }
+
+  const cartPayload = () => ({
+    items: items.map((i) => ({
+      productId: i.productId,
+      productName: i.productName,
+      size: i.size,
+      qty: i.qty,
+      unitPrice: i.unitPrice,
+      pointTransactionId: i.pointTransactionId,
+    })),
+    shipping,
+    discountCode: appliedDiscount?.code,
+  });
+
+  async function handleCardCheckout() {
     setError(null);
     setPlacing(true);
 
@@ -140,18 +182,7 @@ export default function CartDrawer() {
     const res = await fetch("/api/checkout/whop", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items: items.map((i) => ({
-          productId: i.productId,
-          productName: i.productName,
-          size: i.size,
-          qty: i.qty,
-          unitPrice: i.unitPrice,
-          pointTransactionId: i.pointTransactionId,
-        })),
-        shipping,
-        discountCode: appliedDiscount?.code,
-      }),
+      body: JSON.stringify(cartPayload()),
     });
 
     const body = await res.json().catch(() => ({}));
@@ -167,10 +198,46 @@ export default function CartDrawer() {
     window.location.href = body.purchaseUrl;
   }
 
+  // Selecting Zelle immediately creates the real (unpaid) order — unlike
+  // Card, there's no external checkout session to send the customer to, and
+  // they need the order number right away to put in the Zelle payment note.
+  // Cached in zelleOrder so toggling back to Card and then back to Zelle
+  // doesn't create a second order for the same cart.
+  async function handleSelectZelle() {
+    setPaymentMethod("zelle");
+    if (zelleOrder || zelleLoading) return;
+
+    setZelleLoading(true);
+    setZelleError(null);
+
+    const res = await fetch("/api/checkout/zelle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cartPayload()),
+    });
+    const body = await res.json().catch(() => ({}));
+    setZelleLoading(false);
+
+    if (!res.ok) {
+      setZelleError(body.error ?? "Something went wrong starting checkout.");
+      return;
+    }
+
+    setZelleOrder({ orderNumber: body.orderNumber, amountDue: body.amountDue });
+    // The order is now real (unpaid, but real — any redeemed reward points
+    // are already spent/linked to it) — clear the cart the same way a
+    // completed Card order does, rather than leaving these items sitting in
+    // the drawer looking like they still need checking out.
+    clear();
+  }
+
   function handleClose() {
-    // Closing the drawer mid-shipping-form shouldn't strand the customer on
-    // the shipping step next time they open it with an empty cart view.
+    // Closing the drawer mid-checkout shouldn't strand the customer
+    // mid-flow next time they open it with an empty cart view.
     setStep("cart");
+    setPaymentMethod(null);
+    setZelleOrder(null);
+    setZelleError(null);
     closeDrawer();
   }
 
@@ -179,7 +246,9 @@ export default function CartDrawer() {
       <div className={`overlay ${isDrawerOpen ? "show" : ""}`} onClick={handleClose} />
       <div className={`drawer ${isDrawerOpen ? "show" : ""}`}>
         <div className="drawer-head">
-          <h3>{step === "shipping" ? "Shipping Info" : "Your Cart"}</h3>
+          <h3>
+            {step === "shipping" ? "Shipping Info" : step === "payment" ? "Payment" : "Your Cart"}
+          </h3>
           <button className="drawer-close" onClick={handleClose}>
             ✕
           </button>
@@ -304,12 +373,12 @@ export default function CartDrawer() {
               </div>
             )}
           </>
-        ) : (
-          <form onSubmit={handlePlaceOrder} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        ) : step === "shipping" ? (
+          <form onSubmit={handleContinueToPayment} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
             <div className="drawer-body">
               <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
-                We just need to know where this ships to — you&apos;ll enter payment details on
-                the next screen.
+                We just need to know where this ships to — you&apos;ll pick how to pay on the
+                next screen.
               </p>
 
               <label htmlFor="ship-name">Full Name</label>
@@ -416,17 +485,139 @@ export default function CartDrawer() {
                   className="btn btn-outline"
                   style={{ flex: 1 }}
                   onClick={() => setStep("cart")}
-                  disabled={placing}
                 >
                   Back to Cart
                 </button>
-                <button type="submit" className="btn" style={{ flex: 2 }} disabled={placing}>
-                  {placing ? "Redirecting to payment…" : "Continue to Payment"}
+                <button type="submit" className="btn" style={{ flex: 2 }}>
+                  Continue to Payment
                 </button>
               </div>
               {error && <p className="error">{error}</p>}
             </div>
           </form>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+            <div className="drawer-body">
+              <div className="subtotal-row" style={{ fontWeight: 800, marginBottom: 14 }}>
+                <span>Total Due</span>
+                <span>{money(grandTotal)}</span>
+              </div>
+
+              <div
+                className={`payment-option ${paymentMethod === "card" ? "selected" : ""}`}
+                onClick={() => setPaymentMethod("card")}
+                style={{
+                  border: `2px solid ${paymentMethod === "card" ? "var(--orange)" : "var(--line)"}`,
+                  borderRadius: 10,
+                  padding: 14,
+                  marginBottom: 12,
+                  cursor: "pointer",
+                }}
+              >
+                <strong>💳 Card</strong>
+                <div style={{ fontSize: 12.5, color: "var(--muted)" }}>{money(grandTotal)} — pay securely via Whop</div>
+              </div>
+
+              <div
+                className={`payment-option ${paymentMethod === "zelle" ? "selected" : ""}`}
+                onClick={handleSelectZelle}
+                style={{
+                  border: `2px solid ${paymentMethod === "zelle" ? "var(--orange)" : "var(--line)"}`,
+                  borderRadius: 10,
+                  padding: 14,
+                  marginBottom: 12,
+                  cursor: "pointer",
+                }}
+              >
+                <strong>🏦 Zelle</strong>{" "}
+                <span style={{ color: "#059669", fontWeight: 700, fontSize: 12.5 }}>Save {ZELLE_DISCOUNT_PERCENT}%</span>
+                <div style={{ fontSize: 12.5, color: "var(--muted)" }}>
+                  {money(grandTotal * (1 - ZELLE_DISCOUNT_PERCENT / 100))} — manual payment, confirmed by staff
+                </div>
+              </div>
+
+              {paymentMethod === "zelle" && (
+                <div
+                  style={{
+                    background: "#fff7ed",
+                    border: "1px solid #fdba74",
+                    borderRadius: 10,
+                    padding: 14,
+                    marginTop: 4,
+                  }}
+                >
+                  {zelleLoading && <p style={{ margin: 0, fontSize: 13.5 }}>Creating your order…</p>}
+                  {zelleError && <p className="error" style={{ margin: 0 }}>{zelleError}</p>}
+                  {zelleOrder && (
+                    <>
+                      <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
+                        <Image
+                          src="/zelle-qr.jpg"
+                          alt="Zelle QR code"
+                          width={130}
+                          height={130}
+                          style={{ borderRadius: 8, background: "#fff", padding: 6 }}
+                        />
+                        <div style={{ flex: 1, minWidth: 180 }}>
+                          <p style={{ margin: "0 0 4px", fontSize: 13.5 }}>
+                            Send <strong>{money(zelleOrder.amountDue)}</strong> via Zelle using the QR code.
+                          </p>
+                          <p style={{ margin: "0 0 4px", fontSize: 13.5 }}>
+                            Order number: <strong>{zelleOrder.orderNumber}</strong>
+                          </p>
+                        </div>
+                      </div>
+                      <p style={{ margin: "10px 0 0", fontSize: 12.5, fontWeight: 800, color: "#b91c1c" }}>
+                        You MUST put {zelleOrder.orderNumber} in the Zelle payment note, or your payment
+                        will be refunded instead of fulfilled.
+                      </p>
+                      <p style={{ margin: "6px 0 0", fontSize: 11.5, color: "var(--muted)" }}>
+                        Zelle orders fulfill on the exact same timeline as card orders once payment is
+                        confirmed — no extra wait. You can find these instructions again anytime on the
+                        My Orders page.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="drawer-foot">
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  style={{ flex: 1 }}
+                  onClick={() => setStep("shipping")}
+                  disabled={placing}
+                >
+                  Back
+                </button>
+                {paymentMethod === "zelle" ? (
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ flex: 2 }}
+                    onClick={handleClose}
+                    disabled={!zelleOrder}
+                  >
+                    Done
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ flex: 2 }}
+                    onClick={handleCardCheckout}
+                    disabled={placing || paymentMethod !== "card"}
+                  >
+                    {placing ? "Redirecting to payment…" : "Continue to Payment"}
+                  </button>
+                )}
+              </div>
+              {error && <p className="error">{error}</p>}
+            </div>
+          </div>
         )}
       </div>
     </>

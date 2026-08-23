@@ -2,14 +2,24 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { NewOrderPayload, PointTransaction } from "@/types/database";
-import { sendOrderConfirmationEmail } from "@/lib/email/sendOrderConfirmation";
 import { calculateShippingFee } from "@/lib/shipping/rate";
+import { resolveVariant } from "@/lib/inventory/resolveVariant";
 
-// POST /api/orders — creates an order + its line items for the signed-in
-// user. Uses the user's own session (not the service role), so the
-// "orders_insert_own" RLS policy is what actually stops one user from
-// creating an order under someone else's account — this route can't bypass
-// that even with a bug, because it never gets elevated privileges.
+// 5% off for choosing Zelle over a card — in exchange for us not getting
+// instant payment confirmation the way Whop gives us. See the big comment
+// on 0013_zelle_payments.sql for how this fits into the order lifecycle.
+const ZELLE_DISCOUNT_RATE = 0.05;
+
+// POST /api/checkout/zelle — validates the cart exactly the same way
+// /api/checkout/whop does (same stock check, same reward-reservation
+// re-verification, same server-side discount-code/shipping recomputation —
+// never trust the client for any of this). The difference from Whop: there's
+// no external checkout session to redirect to, so this creates a REAL
+// `orders` row immediately, under the customer's own session (same RLS
+// pattern the old /api/orders used), with status "Awaiting Payment". Stock,
+// earned points, and the confirmation email are all deferred until staff
+// confirm the Zelle payment actually arrived and click "Mark Paid & Fulfill"
+// — see /api/admin/orders/[id]/mark-paid.
 export async function POST(request: Request) {
   const supabase = createClient();
   const {
@@ -25,8 +35,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Order must include at least one item." }, { status: 400 });
   }
 
-  // A cart made entirely of points-redeemed rewards can't check out on its
-  // own — there has to be at least one item actually being paid for.
   const hasPaidItem = body.items.some((i) => !i.pointTransactionId);
   if (!hasPaidItem) {
     return NextResponse.json(
@@ -35,10 +43,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // No payment processor is wired up yet, but every order still has to ship
-  // somewhere — these fields are required even though nothing charges a
-  // card yet, so the data is real and usable the moment a processor is
-  // connected later.
   const shipping = body.shipping;
   const required: (keyof typeof shipping)[] = ["name", "phone", "email", "addressLine1", "city", "state", "zip"];
   const missing = shipping ? required.filter((field) => !shipping[field]?.toString().trim()) : required;
@@ -49,15 +53,36 @@ export async function POST(request: Request) {
     );
   }
 
-  // Reward items (redeemed with points on /points, added to the cart from
-  // there) each carry the id of the point_transactions row that already
-  // reserved the points for them. That reservation is re-verified here —
-  // still belongs to this user, still an un-spent, un-voided redemption —
-  // and its price is always forced to $0 server-side no matter what the
-  // client sent, the same way the discount percent below is never trusted
-  // from the client.
-  const rewardTxIds = [...new Set(body.items.map((i) => i.pointTransactionId).filter(Boolean))] as string[];
   const admin = createAdminClient();
+
+  // Same point-in-time stock check as /api/checkout/whop — see that file's
+  // comment for why this isn't a hold/reservation. Also resolve+cache each
+  // line's real product_id here so the order_items insert below doesn't
+  // have to re-query for it.
+  const resolvedProductIdByLine = new Map<string, string>();
+  for (const item of body.items) {
+    const variant = await resolveVariant(admin, item);
+    if (!variant) {
+      return NextResponse.json(
+        { error: `${item.productName} (${item.size}) is no longer available.` },
+        { status: 400 }
+      );
+    }
+    if (variant.stock < item.qty) {
+      return NextResponse.json(
+        {
+          error:
+            variant.stock === 0
+              ? `${item.productName} (${item.size}) is currently out of stock.`
+              : `Only ${variant.stock} left of ${item.productName} (${item.size}) — lower the quantity in your cart.`,
+        },
+        { status: 400 }
+      );
+    }
+    resolvedProductIdByLine.set(item.pointTransactionId ?? `${item.productId}::${item.size}`, variant.product_id);
+  }
+
+  const rewardTxIds = [...new Set(body.items.map((i) => i.pointTransactionId).filter(Boolean))] as string[];
   const reservationById = new Map<string, PointTransaction>();
 
   if (rewardTxIds.length > 0) {
@@ -83,8 +108,6 @@ export async function POST(request: Request) {
     }
   }
 
-  // The authoritative price for every line — reward items are always $0
-  // here regardless of whatever unitPrice the client's cart state had.
   const normalizedItems = body.items.map((i) => ({
     ...i,
     unitPrice: i.pointTransactionId ? 0 : i.unitPrice,
@@ -92,19 +115,8 @@ export async function POST(request: Request) {
 
   const subtotal = normalizedItems.reduce((sum, i) => sum + i.unitPrice * i.qty, 0);
   const pointsRedeemedTotal = [...reservationById.values()].reduce((sum, r) => sum + Math.abs(r.points), 0);
-
-  // Free at $200+ of raw product subtotal (before any discount code), a
-  // flat zone-estimated rate below that — see src/lib/shipping/rate.ts.
-  // Reward (points-redeemed) lines are already $0 in `subtotal` above, so
-  // they never help an order reach the free-shipping threshold.
   const shippingFee = calculateShippingFee(subtotal, shipping.state);
 
-  // Only the discount CODE is trusted from the client — the percent it's
-  // worth is always looked up fresh here, never taken from the request
-  // body. Without this, editing the page's JavaScript in devtools could let
-  // someone claim any discount they want. Uses the service-role client for
-  // the same reason /api/discount-codes/validate does: there's no
-  // customer-facing RLS policy for reading discount_codes.
   let discountCode: string | null = null;
   let discountPercent = 0;
   const requestedCode = body.discountCode?.trim().toUpperCase();
@@ -127,7 +139,16 @@ export async function POST(request: Request) {
   }
 
   const total = Math.round(subtotal * (1 - discountPercent / 100) * 100) / 100;
+  const preZelleGrandTotal = Math.round((total + shippingFee) * 100) / 100;
+  const zelleDiscountAmount = Math.round(preZelleGrandTotal * ZELLE_DISCOUNT_RATE * 100) / 100;
+  const amountDue = Math.round((preZelleGrandTotal - zelleDiscountAmount) * 100) / 100;
 
+  // Insert under the customer's own session — orders_insert_own (see
+  // 0001_init.sql) is what actually enforces user_id can't be spoofed. This
+  // is a REAL order row, not a pending one, unlike the Whop flow — there's
+  // no external payment session to wait on before we know "the customer
+  // committed to this," just a promise to Zelle the money with the order
+  // number in the note.
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
@@ -138,6 +159,9 @@ export async function POST(request: Request) {
       total,
       points_redeemed: pointsRedeemedTotal,
       shipping_fee: shippingFee,
+      payment_method: "zelle",
+      zelle_discount_amount: zelleDiscountAmount,
+      status: "Awaiting Payment",
       shipping_name: shipping.name,
       shipping_phone: shipping.phone,
       shipping_email: shipping.email,
@@ -161,80 +185,35 @@ export async function POST(request: Request) {
       size: i.size,
       qty: i.qty,
       unit_price: i.unitPrice,
+      product_id: resolvedProductIdByLine.get(i.pointTransactionId ?? `${i.productId}::${i.size}`) ?? null,
     }))
   );
 
   if (itemsError) {
+    // Best-effort cleanup so a failed item insert doesn't leave an empty
+    // "ghost" order sitting in Awaiting Payment forever.
+    await admin.from("orders").delete().eq("id", order.id);
     return NextResponse.json({ error: itemsError.message }, { status: 500 });
   }
 
-  // Link each reservation to the now-real order — this both records which
-  // order a redemption paid for, and (via the order_id-must-be-null check
-  // above and in /api/points/refund) permanently stops it from being
-  // refunded again.
+  // Link the reservations to the real order right away (unlike Whop, which
+  // waits for payment confirmation) — this order already exists for real,
+  // it's just unpaid. Known tradeoff, not fixed in this pass: if this
+  // specific Zelle order is never paid and never fulfilled, these points
+  // are gone rather than automatically refunded — same as if the reward had
+  // actually been used. A "Cancel & Refund" admin action would close that
+  // gap later if it comes up.
   if (rewardTxIds.length > 0) {
     await admin.from("point_transactions").update({ order_id: order.id }).in("id", rewardTxIds);
   }
 
-  // Award rewards points — 1 point per dollar actually paid (after any
-  // discount), rounded down so a partial dollar never rounds up in the
-  // customer's favor. Uses the service-role client because there's no
-  // client-writable insert policy on point_transactions (see
-  // 0007_points.sql) — points are only ever credited by the server, after
-  // the order itself is already safely recorded.
-  const pointsEarned = Math.floor(total);
-  if (pointsEarned > 0) {
-    await admin.from("point_transactions").insert({
-      user_id: user.id,
-      points: pointsEarned,
-      type: "earned",
-      order_id: order.id,
-      description: `Order ${order.order_number}`,
-    });
-  }
-
-  // Fire the confirmation email after the order is safely in the database.
-  // sendOrderConfirmationEmail swallows its own errors and returns a plain
-  // boolean rather than throwing, so a bad API key or a Resend outage never
-  // turns into a 500 for an order that already succeeded — the customer
-  // still gets their order, just not the email, and it's logged server-side
-  // for you to notice.
-  await sendOrderConfirmationEmail({
-    toEmail: shipping.email,
-    orderNumber: order.order_number,
-    items: normalizedItems,
-    subtotal,
-    discountCode,
-    discountPercent,
-    total,
-    shippingFee,
-    shipping,
-  });
-
-  return NextResponse.json({ order }, { status: 201 });
-}
-
-// GET /api/orders — the signed-in user's own orders (JSON). Handy for
-// hooking a real frontend cart/checkout up to this later instead of using
-// the Server Component page directly.
-export async function GET() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Not signed in." }, { status: 401 });
-  }
-
-  const { data, error } = await supabase
-    .from("orders")
-    .select("*, order_items(*)")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ orders: data });
+  return NextResponse.json(
+    {
+      orderNumber: order.order_number,
+      amountDue,
+      zelleDiscountAmount,
+      grandTotalBeforeDiscount: preZelleGrandTotal,
+    },
+    { status: 201 }
+  );
 }

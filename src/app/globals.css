@@ -240,6 +240,7 @@ th{ color:var(--muted); font-size:11.5px; text-transform:uppercase; }
 .status-processing{ background:#fff7ed; color:#c2540c; border:1px solid #fdba74; }
 .status-shipped{ background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
 .status-delivered{ background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; }
+.status-awaiting-payment{ background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
 .timeline{ display:flex; align-items:center; margin:22px 0 20px; }
 .timeline .tstep{ flex:1; text-align:center; position:relative; }
 .timeline .tstep .dot{ width:26px; height:26px; border-radius:50%; background:var(--line); color:white; display:flex; align-items:center; justify-content:center; margin:0 auto 8px; font-size:12px; font-weight:800; position:relative; z-index:2; }

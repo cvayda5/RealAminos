@@ -32,6 +32,26 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if (body.status) updates.status = body.status;
   if (body.trackingNumber !== undefined) updates.tracking_number = body.trackingNumber;
 
+  // An unpaid Zelle order can only leave "Awaiting Payment" through
+  // /api/admin/orders/[id]/mark-paid, which also decrements stock and
+  // awards points as part of that same transition — those side effects
+  // must never be skippable by just picking "Processing" from the normal
+  // status dropdown.
+  if (body.status) {
+    const { data: current } = await supabase
+      .from("orders")
+      .select("status, payment_method")
+      .eq("id", params.id)
+      .single();
+
+    if (current?.status === "Awaiting Payment" && current.payment_method === "zelle" && body.status !== "Awaiting Payment") {
+      return NextResponse.json(
+        { error: "Use \"Mark Paid & Fulfill\" to move a Zelle order out of Awaiting Payment." },
+        { status: 400 }
+      );
+    }
+  }
+
   const { data, error } = await supabase
     .from("orders")
     .update(updates)

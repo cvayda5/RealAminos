@@ -2,7 +2,9 @@
 // If you add columns/tables later, update this file to match — or generate
 // it automatically with `supabase gen types typescript`.
 
-export type OrderStatus = "Processing" | "Shipped" | "Delivered";
+export type OrderStatus = "Awaiting Payment" | "Processing" | "Shipped" | "Delivered";
+
+export type PaymentMethod = "card" | "zelle";
 
 export interface Profile {
   id: string;
@@ -85,6 +87,14 @@ export interface Order {
   // customer actually paid is total + shipping_fee. See
   // src/lib/shipping/rate.ts.
   shipping_fee: number;
+  // 'card' (Whop) or 'zelle'. Defaults to 'card' for every order placed
+  // before this column existed.
+  payment_method: PaymentMethod;
+  // How much the 5% Zelle discount knocked off (total + shipping_fee) for
+  // this order. Always 0 for a 'card' order. Subtract this from
+  // total + shipping_fee to get what the customer actually owes/paid via
+  // Zelle — see src/app/api/checkout/zelle/route.ts.
+  zelle_discount_amount: number;
 }
 
 // A single row in a customer's points ledger — see 0007_points.sql and
@@ -134,6 +144,10 @@ export interface OrderItem {
   size: string;
   qty: number;
   unit_price: number;
+  // The real product_variants row's product id, resolved once at
+  // order-creation time (see resolveVariant.ts). Null only for order_items
+  // rows created before 0013_zelle_payments.sql added this column.
+  product_id: string | null;
 }
 
 export interface OrderWithItems extends Order {

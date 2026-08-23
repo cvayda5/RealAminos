@@ -90,7 +90,7 @@ ${addressText}
 
 You can check your order status any time on the My Orders page.
 
-This confirms your order was received — no payment has been charged yet, since payment processing isn't connected yet. Products are for laboratory research use only and are not for human or veterinary use.`;
+This confirms your payment went through and your order is now being processed. Products are for laboratory research use only and are not for human or veterinary use.`;
 
   const html = `
     <div style="font-family:sans-serif;color:#111827;max-width:480px;margin:0 auto;">
@@ -110,9 +110,9 @@ This confirms your order was received — no payment has been charged yet, since
       <p style="font-size:14px;margin-top:22px;margin-bottom:4px;"><strong>Shipping to:</strong></p>
       <p style="font-size:14px;margin-top:0;white-space:pre-line;">${addressText}</p>
       <p style="font-size:13px;color:#6b7280;margin-top:24px;">
-        You can check your order status any time on the My Orders page. This confirms your order
-        was received — no payment has been charged yet, since payment processing isn't connected
-        yet. Products are for laboratory research use only and are not for human or veterinary use.
+        You can check your order status any time on the My Orders page. This confirms your
+        payment went through and your order is now being processed. Products are for laboratory
+        research use only and are not for human or veterinary use.
       </p>
     </div>
   `;

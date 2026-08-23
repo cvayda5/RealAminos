@@ -1,8 +1,16 @@
 import { redirect } from "next/navigation";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus, OrderWithItems } from "@/types/database";
 
 const STEPS: OrderStatus[] = ["Processing", "Shipped", "Delivered"];
+
+// "Awaiting Payment" -> "awaiting-payment" so it matches the
+// .status-awaiting-payment CSS class name (see globals.css) — every other
+// status here is already one word, so this is the only one that needs it.
+function statusSlug(status: OrderStatus) {
+  return status.toLowerCase().replace(/\s+/g, "-");
+}
 
 // Server Component: runs on the server, reads the session from cookies,
 // and queries Postgres directly. Because this uses the user's own session
@@ -49,18 +57,66 @@ export default async function OrdersPage() {
                   {order.points_redeemed > 0 && (
                     <span className="order-status-badge status-delivered">Redeemed with Points</span>
                   )}
-                  <span className={`order-status-badge status-${order.status.toLowerCase()}`}>{order.status}</span>
+                  <span className={`order-status-badge status-${statusSlug(order.status)}`}>{order.status}</span>
                 </div>
               </div>
 
-              <div className="timeline">
-                {STEPS.map((s, i) => (
-                  <div className={`tstep ${i <= currentIdx ? "done" : ""}`} key={s}>
-                    <div className="dot">{i < currentIdx ? "✓" : i + 1}</div>
-                    <span>{s}</span>
+              {order.status === "Awaiting Payment" ? (
+                <div
+                  style={{
+                    background: "#fef2f2",
+                    border: "1px solid #fecaca",
+                    borderRadius: 10,
+                    padding: 16,
+                    margin: "18px 0",
+                    display: "flex",
+                    gap: 16,
+                    flexWrap: "wrap",
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <Image
+                    src="/zelle-qr.jpg"
+                    alt="Zelle QR code"
+                    width={140}
+                    height={140}
+                    style={{ borderRadius: 8, background: "#fff", padding: 6 }}
+                  />
+                  <div style={{ flex: 1, minWidth: 220 }}>
+                    <p style={{ margin: "0 0 6px", fontWeight: 800, color: "#b91c1c" }}>
+                      Awaiting your Zelle payment
+                    </p>
+                    <p style={{ margin: "0 0 4px", fontSize: 14 }}>
+                      Send{" "}
+                      <strong>
+                        ${((order.total ?? order.subtotal) + order.shipping_fee - (order.zelle_discount_amount ?? 0)).toFixed(2)}
+                      </strong>{" "}
+                      via Zelle using the QR code above (5% discount already applied).
+                    </p>
+                    <p style={{ margin: "0 0 4px", fontSize: 14 }}>
+                      You MUST put <strong>{order.order_number}</strong> in the Zelle payment note.
+                    </p>
+                    <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#b91c1c" }}>
+                      Payments sent without the order number in the note will be refunded, not
+                      fulfilled.
+                    </p>
+                    <p style={{ margin: 0, fontSize: 12.5, color: "var(--muted)" }}>
+                      Once we confirm your payment, this order moves into the same
+                      Processing → Shipped → Delivered timeline as every other order — Zelle
+                      orders don&apos;t take any longer to fulfill.
+                    </p>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="timeline">
+                  {STEPS.map((s, i) => (
+                    <div className={`tstep ${i <= currentIdx ? "done" : ""}`} key={s}>
+                      <div className="dot">{i < currentIdx ? "✓" : i + 1}</div>
+                      <span>{s}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {order.tracking_number ? (
                 <div style={{ marginBottom: 14 }}>
@@ -121,10 +177,18 @@ export default async function OrdersPage() {
                       {order.shipping_fee > 0 ? `$${order.shipping_fee.toFixed(2)}` : "FREE"}
                     </td>
                   </tr>
+                  {order.payment_method === "zelle" && order.zelle_discount_amount > 0 && (
+                    <tr>
+                      <td style={{ border: "none", color: "#059669" }}>Zelle discount (-5%)</td>
+                      <td style={{ border: "none", color: "#059669" }}>
+                        -${order.zelle_discount_amount.toFixed(2)}
+                      </td>
+                    </tr>
+                  )}
                   <tr>
                     <td style={{ fontWeight: 800, border: "none" }}>Total</td>
                     <td style={{ fontWeight: 800, border: "none" }}>
-                      ${((order.total ?? order.subtotal) + order.shipping_fee).toFixed(2)}
+                      ${((order.total ?? order.subtotal) + order.shipping_fee - (order.zelle_discount_amount ?? 0)).toFixed(2)}
                     </td>
                   </tr>
                 </tbody>

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useCart } from "@/lib/cart/CartContext";
 
 type Phase = "confirming" | "success" | "failed" | "timeout";
 
@@ -23,6 +24,7 @@ function CheckoutCompleteInner() {
   const searchParams = useSearchParams();
   const pendingId = searchParams.get("pending");
   const [phase, setPhase] = useState<Phase>("confirming");
+  const { clear } = useCart();
 
   useEffect(() => {
     if (!pendingId) {
@@ -42,6 +44,12 @@ function CheckoutCompleteInner() {
 
       if (body.status === "completed") {
         setPhase("success");
+        // The webhook has now created the real order server-side — the
+        // items sitting in the client-side cart just paid for it, so clear
+        // them out instead of leaving them looking like they still need
+        // checking out. (This never fired before — clear() existed on
+        // CartContext but nothing actually called it after a purchase.)
+        clear();
         return;
       }
       if (body.status === "failed") {

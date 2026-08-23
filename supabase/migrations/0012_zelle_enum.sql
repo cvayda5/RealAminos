@@ -1,0 +1,13 @@
+-- RealAminos — Zelle payments, part 1 of 2.
+--
+-- IMPORTANT: run this file by itself first (select all, Run), THEN run
+-- 0013_zelle_payments.sql as a separate Run. Postgres does not allow a new
+-- enum value to be used in the same transaction that adds it, and Supabase's
+-- SQL Editor runs everything you paste in one transaction — splitting into
+-- two files/runs is what avoids a
+-- "unsafe use of new value of enum type" error.
+--
+-- Adds the status an order sits in after a customer chooses to pay by Zelle,
+-- before staff have manually confirmed the money actually arrived (see
+-- 0013_zelle_payments.sql for the rest of the Zelle feature).
+alter type public.order_status add value 'Awaiting Payment';
