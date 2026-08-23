@@ -43,8 +43,22 @@ nav.primary a:hover{ color:var(--orange-dark); border-bottom-color:var(--orange)
 .nav-actions{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
 .nav-actions a{ font-size:13.5px; font-weight:600; color:var(--ink-2); }
 .nav-actions a:hover{ color:var(--orange-dark); }
+.nav-actions-desktop{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
 .cart-btn{ display:flex; align-items:center; gap:8px; background:var(--ink); color:white; border:none; padding:9px 14px; border-radius:8px; font-weight:700; font-size:13.5px; }
 .cart-btn .count{ background:var(--orange); color:white; border-radius:999px; font-size:11px; padding:1px 7px; min-width:18px; text-align:center; }
+
+/* ---------- mobile nav (hamburger) ---------- */
+/* Hidden on desktop — the media query / .force-mobile blocks near the
+   bottom of this file flip this to display:flex and hide nav.primary +
+   nav-actions-desktop in their place. */
+.menu-toggle{ display:none; flex-direction:column; align-items:center; justify-content:center; gap:5px; background:none; border:none; padding:6px; width:36px; height:36px; border-radius:8px; }
+.menu-toggle:hover{ background:var(--paper-2); }
+.menu-toggle span{ display:block; width:20px; height:2px; background:var(--ink); border-radius:2px; }
+.mobile-menu{ display:flex; flex-direction:column; border-top:1px solid var(--line); background:var(--paper); padding:4px 24px 18px; }
+.mobile-menu a{ padding:12px 2px; font-size:15px; font-weight:600; color:var(--ink-2); border-bottom:1px solid var(--line); }
+.mobile-menu a:hover{ color:var(--orange-dark); }
+.mobile-menu-section-label{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); padding-top:16px; }
+.mobile-menu button.link-btn{ display:block; width:100%; text-align:left; padding:12px 2px; font-size:15px; font-weight:600; color:var(--ink-2); text-decoration:none; margin:0; }
 
 /* ---------- buttons ---------- */
 .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:13px 22px; border-radius:9px; font-weight:700; font-size:14.5px; border:none; transition:.15s; background:var(--orange); color:white; cursor:pointer; }
@@ -275,13 +289,85 @@ table.admin-table tr:last-child td{ border-bottom:none; }
 .admin-save{ background:var(--ink); color:white; border:none; border-radius:7px; padding:6px 10px; font-size:12px; font-weight:700; margin-top:6px; cursor:pointer; }
 .admin-save:hover{ background:var(--orange-dark); }
 
+/* ---------- responsive: tablet / phone ---------- */
+/* Every rule below is also duplicated, unconditionally, under
+   html.force-mobile near the bottom of this file — that's what powers the
+   "View as iPhone" footer toggle (see ViewModeToggle.tsx): forcing the
+   phone layout regardless of the browser window's actual width. Each rule
+   here is instead scoped with html:not(.force-desktop) so that toggle's
+   "Computer" side can override what a REAL narrow screen would otherwise
+   get from this same media query. */
 @media (max-width:980px){
-  nav.primary{ display:none; }
-  .hero-inner{ grid-template-columns:1fr; }
-  .trust-grid,.product-grid{ grid-template-columns:repeat(2,1fr); }
-  .shop-layout,.pd-layout{ grid-template-columns:1fr; }
-  .filter-panel{ border-right:none; border-bottom:1px solid var(--line); padding-bottom:16px; }
-  .footer-grid{ grid-template-columns:1fr 1fr; }
-  .step-grid{ grid-template-columns:1fr; }
-  .lab-hero{ grid-template-columns:1fr; }
+  html:not(.force-desktop) nav.primary{ display:none; }
+  html:not(.force-desktop) .nav-actions-desktop{ display:none; }
+  html:not(.force-desktop) .menu-toggle{ display:flex; }
+  html:not(.force-desktop) .hero-inner{ grid-template-columns:1fr; }
+  html:not(.force-desktop) .trust-grid,
+  html:not(.force-desktop) .product-grid{ grid-template-columns:repeat(2,1fr); }
+  html:not(.force-desktop) .shop-layout,
+  html:not(.force-desktop) .pd-layout{ grid-template-columns:1fr; }
+  html:not(.force-desktop) .filter-panel{ border-right:none; border-bottom:1px solid var(--line); padding-bottom:16px; }
+  html:not(.force-desktop) .footer-grid{ grid-template-columns:1fr 1fr; }
+  html:not(.force-desktop) .step-grid{ grid-template-columns:1fr; }
+  html:not(.force-desktop) .lab-hero{ grid-template-columns:1fr; }
+  html:not(.force-desktop) .admin-table-wrap{ overflow-x:auto; }
+  html:not(.force-desktop) table.admin-table{ min-width:760px; }
 }
+
+/* Narrower still (phones) — a plain "under 980px" layout still leaves
+   things like a 2-column product grid or a 42px hero headline cramped on
+   an actual phone screen, so these tighten it up further. */
+@media (max-width:480px){
+  html:not(.force-desktop) .trust-grid,
+  html:not(.force-desktop) .product-grid{ grid-template-columns:1fr; }
+  html:not(.force-desktop) .footer-grid{ grid-template-columns:1fr; }
+  html:not(.force-desktop) .hero{ padding:52px 18px 60px; }
+  html:not(.force-desktop) .hero h1{ font-size:30px; }
+  html:not(.force-desktop) .hero p.lead{ font-size:15px; }
+  html:not(.force-desktop) .hero-stats{ gap:16px; }
+  html:not(.force-desktop) .section-head h2{ font-size:22px; }
+  html:not(.force-desktop) .pd-title{ font-size:24px; }
+  html:not(.force-desktop) .pd-visual{ height:280px; }
+  html:not(.force-desktop) .lab-hero{ padding:26px 20px; }
+  html:not(.force-desktop) .lab-hero h2{ font-size:21px; }
+  html:not(.force-desktop) .gate-card{ padding:26px 20px; }
+}
+
+/* ---------- "View as iPhone / Computer" footer toggle ---------- */
+/* html.force-mobile / html.force-desktop are set client-side by
+   ViewModeToggle.tsx (persisted to localStorage, applied on load by an
+   inline script in layout.tsx so there's no flash of the wrong layout).
+   This block re-states every rule above so the phone layout can be forced
+   on a wide desktop window on purpose — same idea as the "Switch to Mobile
+   Site" links older websites used to have. */
+html.force-mobile nav.primary{ display:none; }
+html.force-mobile .nav-actions-desktop{ display:none; }
+html.force-mobile .menu-toggle{ display:flex; }
+html.force-mobile .hero-inner{ grid-template-columns:1fr; }
+html.force-mobile .trust-grid,
+html.force-mobile .product-grid{ grid-template-columns:1fr; }
+html.force-mobile .shop-layout,
+html.force-mobile .pd-layout{ grid-template-columns:1fr; }
+html.force-mobile .filter-panel{ border-right:none; border-bottom:1px solid var(--line); padding-bottom:16px; }
+html.force-mobile .footer-grid{ grid-template-columns:1fr; }
+html.force-mobile .step-grid{ grid-template-columns:1fr; }
+html.force-mobile .lab-hero{ grid-template-columns:1fr; padding:26px 20px; }
+html.force-mobile .lab-hero h2{ font-size:21px; }
+html.force-mobile .admin-table-wrap{ overflow-x:auto; }
+html.force-mobile table.admin-table{ min-width:760px; }
+html.force-mobile .hero{ padding:52px 18px 60px; }
+html.force-mobile .hero h1{ font-size:30px; }
+html.force-mobile .hero p.lead{ font-size:15px; }
+html.force-mobile .hero-stats{ gap:16px; }
+html.force-mobile .section-head h2{ font-size:22px; }
+html.force-mobile .pd-title{ font-size:24px; }
+html.force-mobile .pd-visual{ height:280px; }
+html.force-mobile .gate-card{ padding:26px 20px; }
+
+/* ---------- footer view-mode toggle widget ---------- */
+.view-toggle{ max-width:1180px; margin:0 auto; padding-top:24px; margin-top:24px; border-top:1px solid #2a3341; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.view-toggle-label{ font-size:12px; color:#7d8794; }
+.view-toggle-btns{ display:inline-flex; border:1px solid #384252; border-radius:999px; padding:3px; gap:2px; }
+.view-toggle-btn{ background:none; border:none; color:#9aa5b1; font-size:12.5px; font-weight:700; padding:6px 14px; border-radius:999px; cursor:pointer; }
+.view-toggle-btn:hover{ color:white; }
+.view-toggle-btn.active{ background:var(--orange); color:white; }

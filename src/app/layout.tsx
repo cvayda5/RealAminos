@@ -33,6 +33,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en">
+      <head>
+        {/* Applies a saved "View as iPhone/Computer" choice (see
+            ViewModeToggle.tsx) before the page paints, so a returning
+            visitor who forced mobile view doesn't see a flash of the
+            desktop layout first. Inline + synchronous on purpose — a
+            regular React effect would run after the first paint. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var m=localStorage.getItem("ra-view-mode");if(m==="mobile")document.documentElement.classList.add("force-mobile");else if(m==="desktop")document.documentElement.classList.add("force-desktop");}catch(e){}`,
+          }}
+        />
+      </head>
       <body>
         <CartProvider>
           <SiteGate />

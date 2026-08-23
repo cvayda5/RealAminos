@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ViewModeToggle from "./ViewModeToggle";
 
 export default function SiteFooter() {
   return (
@@ -50,6 +51,7 @@ export default function SiteFooter() {
         <br />© {new Date().getFullYear()} RealAminos. All rights reserved. &nbsp;·&nbsp;{" "}
         <Link href="/admin/orders">Staff Admin Login</Link>
       </div>
+      <ViewModeToggle />
     </footer>
   );
 }
