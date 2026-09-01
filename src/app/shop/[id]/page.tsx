@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { ProductWithVariants } from "@/types/database";
 import AddToCartBox from "./AddToCartBox";
+import ProductVisualCarousel from "./ProductVisualCarousel";
 
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -23,10 +24,11 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
       </div>
 
       <div className="pd-layout">
-        <div className="pd-visual">
-          <div className="cap-lg" />
-          <div className="vial-lg" />
-        </div>
+        <ProductVisualCarousel
+          coaPreviewUrl={product.coa_preview_url}
+          coaUrl={product.coa_url}
+          lotNumber={product.lot_number}
+        />
 
         <div>
           <div className="pd-cat">{product.category}</div>

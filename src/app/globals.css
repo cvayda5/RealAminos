@@ -151,10 +151,23 @@ footer.site{ background:var(--ink); color:#cbd5e1; padding:52px 24px 28px; margi
 
 /* ---------- product detail ---------- */
 .pd-layout{ display:grid; grid-template-columns:.85fr 1.15fr; gap:48px; padding:44px 0 70px; }
-.pd-visual{ background:linear-gradient(135deg,#fff7ed,#ffedd5); border-radius:18px; height:420px; display:flex; align-items:center; justify-content:center; position:relative; }
+.pd-visual{ background:linear-gradient(135deg,#fff7ed,#ffedd5); border-radius:18px; height:420px; position:relative; overflow:hidden; }
 .pd-visual .vial-lg{ width:70px; height:160px; border-radius:12px 12px 22px 22px; background:linear-gradient(180deg,#e2e8f0,#cbd5e1); border:3px solid #94a3b8; position:relative; }
 .pd-visual .vial-lg::before{ content:""; position:absolute; top:16px; left:0; right:0; bottom:14px; background:rgba(249,115,22,.55); }
 .pd-visual .cap-lg{ position:absolute; top:-12px; left:50%; transform:translateX(-50%); width:44px; height:26px; background:var(--orange); border-radius:5px; }
+
+/* product-page slide carousel: slide 1 is the vial mark, slide 2 (when the
+   product has a tested lot) is the Certificate of Analysis */
+.pd-slide-track{ display:flex; width:100%; height:100%; transition:transform .35s ease; }
+.pd-slide{ min-width:100%; height:100%; display:flex; align-items:center; justify-content:center; position:relative; padding:20px; box-sizing:border-box; }
+.pd-slide img{ max-height:100%; max-width:100%; object-fit:contain; border-radius:10px; box-shadow:0 6px 20px rgba(15,23,42,.18); background:white; cursor:zoom-in; }
+.pd-slide-label{ position:absolute; top:14px; left:14px; background:rgba(15,23,42,.78); color:white; font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:5px 11px; border-radius:999px; }
+.pd-slide-arrow{ position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,.9); border:1px solid var(--line); width:32px; height:32px; border-radius:999px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px; line-height:1; color:var(--ink); z-index:2; }
+.pd-slide-arrow.prev{ left:12px; }
+.pd-slide-arrow.next{ right:12px; }
+.pd-slide-dots{ position:absolute; bottom:12px; left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:2; }
+.pd-slide-dot{ width:7px; height:7px; padding:0; border:none; border-radius:999px; background:rgba(15,23,42,.25); cursor:pointer; }
+.pd-slide-dot.active{ background:var(--orange); width:18px; border-radius:999px; }
 .breadcrumb{ font-size:13px; color:var(--muted); margin:20px 0 6px; }
 .breadcrumb a{ color:var(--orange-dark); font-weight:600; }
 .pd-cat{ font-size:12px; font-weight:700; color:var(--orange-dark); text-transform:uppercase; letter-spacing:.04em; }
@@ -227,6 +240,18 @@ footer.site{ background:var(--ink); color:#cbd5e1; padding:52px 24px 28px; margi
 .coa-search{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:12px; padding:20px; }
 .coa-search input{ width:100%; padding:10px 12px; border-radius:8px; border:none; margin-bottom:10px; font-size:13.5px; }
 .coa-result{ margin-top:14px; font-size:12.5px; color:#fdba74; min-height:16px; }
+
+/* /lab — browse-by-product list + selected COA detail */
+.coa-product-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; margin-bottom:24px; }
+.coa-product-item{ display:flex; flex-direction:column; align-items:flex-start; gap:4px; text-align:left; background:var(--paper); border:1.5px solid var(--line); border-radius:12px; padding:14px 16px; cursor:pointer; font-family:inherit; }
+.coa-product-item:hover{ border-color:var(--orange); }
+.coa-product-item.active{ border-color:var(--orange); background:var(--orange-light); }
+.coa-product-name{ font-weight:700; font-size:14px; color:var(--ink); }
+.coa-product-lot{ font-family:var(--mono); font-size:12px; color:var(--muted); }
+.coa-detail{ position:relative; background:white; border:1px solid var(--line); border-radius:16px; padding:26px; margin-bottom:40px; }
+.coa-detail-layout{ display:grid; grid-template-columns:.8fr 1.2fr; gap:28px; align-items:start; }
+.coa-detail-img{ width:100%; border-radius:10px; border:1px solid var(--line); cursor:zoom-in; }
+.coa-detail-close{ position:absolute; top:14px; right:14px; width:30px; height:30px; border-radius:999px; border:1px solid var(--line); background:var(--paper); font-size:18px; line-height:1; cursor:pointer; color:var(--ink-2); }
 
 .step-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-bottom:10px; }
 .step-card{ background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:22px; }
@@ -310,6 +335,7 @@ table.admin-table tr:last-child td{ border-bottom:none; }
   html:not(.force-desktop) .footer-grid{ grid-template-columns:1fr 1fr; }
   html:not(.force-desktop) .step-grid{ grid-template-columns:1fr; }
   html:not(.force-desktop) .lab-hero{ grid-template-columns:1fr; }
+  html:not(.force-desktop) .coa-detail-layout{ grid-template-columns:1fr; }
   html:not(.force-desktop) .admin-table-wrap{ overflow-x:auto; }
   html:not(.force-desktop) table.admin-table{ min-width:760px; }
 }
@@ -353,6 +379,7 @@ html.force-mobile .footer-grid{ grid-template-columns:1fr; }
 html.force-mobile .step-grid{ grid-template-columns:1fr; }
 html.force-mobile .lab-hero{ grid-template-columns:1fr; padding:26px 20px; }
 html.force-mobile .lab-hero h2{ font-size:21px; }
+html.force-mobile .coa-detail-layout{ grid-template-columns:1fr; }
 html.force-mobile .admin-table-wrap{ overflow-x:auto; }
 html.force-mobile table.admin-table{ min-width:760px; }
 html.force-mobile .hero{ padding:52px 18px 60px; }

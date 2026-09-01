@@ -26,6 +26,7 @@ export interface Product {
   // BAC Water, which isn't a peptide and has no lot/COA).
   lot_number: string | null;
   coa_url: string | null;
+  coa_preview_url: string | null;
   coa_purity_percent: number | null;
   coa_net_content_mg: number | null;
   coa_tested_at: string | null;

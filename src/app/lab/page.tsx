@@ -1,4 +1,5 @@
 import CoaLookup from "./CoaLookup";
+import CoaProductList from "./CoaProductList";
 
 export default function LabTestingPage() {
   return (
@@ -15,6 +16,8 @@ export default function LabTestingPage() {
           </div>
           <CoaLookup />
         </div>
+
+        <CoaProductList />
 
         <div className="section-head">
           <div>
