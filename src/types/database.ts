@@ -21,6 +21,14 @@ export interface Product {
   description: string | null;
   is_active: boolean;
   created_at: string;
+  // Certificate of Analysis for the lot currently in stock — see
+  // 0014_coa.sql. All null for a product with no tested batch yet (e.g.
+  // BAC Water, which isn't a peptide and has no lot/COA).
+  lot_number: string | null;
+  coa_url: string | null;
+  coa_purity_percent: number | null;
+  coa_net_content_mg: number | null;
+  coa_tested_at: string | null;
 }
 
 export interface ProductVariant {

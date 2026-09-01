@@ -77,14 +77,65 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
               </tbody>
             </table>
             <h4>Certificate of Analysis</h4>
-            <p>
-              A lot-specific COA (HPLC purity, mass spec identity confirmation, and endotoxin
-              screening) is generated for every batch and available on request or via our{" "}
-              <Link href="/lab" style={{ color: "var(--orange-dark)", fontWeight: 700 }}>
-                Lab Testing lookup
-              </Link>
-              .
-            </p>
+            {product.coa_url && product.lot_number ? (
+              <div className="pd-coa">
+                <table className="spec-table">
+                  <tbody>
+                    <tr>
+                      <td>Current Lot</td>
+                      <td>{product.lot_number}</td>
+                    </tr>
+                    <tr>
+                      <td>Purity (HPLC-UV)</td>
+                      <td>{product.coa_purity_percent}%</td>
+                    </tr>
+                    {product.coa_net_content_mg && (
+                      <tr>
+                        <td>Net Content</td>
+                        <td>{product.coa_net_content_mg} mg</td>
+                      </tr>
+                    )}
+                    {product.coa_tested_at && (
+                      <tr>
+                        <td>Tested</td>
+                        <td>
+                          {new Date(product.coa_tested_at + "T00:00:00").toLocaleDateString(
+                            "en-US",
+                            { year: "numeric", month: "long", day: "numeric" }
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+                <a
+                  className="btn"
+                  href={product.coa_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "inline-block", marginTop: 14, textDecoration: "none" }}
+                >
+                  View Certificate of Analysis (PDF)
+                </a>
+                <p style={{ marginTop: 10 }}>
+                  Independently tested by a third-party laboratory — identity confirmed via
+                  LC-MS, purity via HPLC-UV. Look up any lot by number on our{" "}
+                  <Link href="/lab" style={{ color: "var(--orange-dark)", fontWeight: 700 }}>
+                    Lab Testing page
+                  </Link>
+                  .
+                </p>
+              </div>
+            ) : (
+              <p>
+                A lot-specific COA (HPLC purity, mass spec identity confirmation, and endotoxin
+                screening) is generated for every batch and available on request or via our{" "}
+                <Link href="/lab" style={{ color: "var(--orange-dark)", fontWeight: 700 }}>
+                  Lab Testing lookup
+                </Link>
+                .
+              </p>
+            )}
           </div>
         </div>
       </div>
