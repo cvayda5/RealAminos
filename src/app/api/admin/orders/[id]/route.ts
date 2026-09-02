@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/types/database";
+import { sendOrderShippedEmail } from "@/lib/email/sendOrderShipped";
 
 interface Body {
   status?: OrderStatus;
@@ -36,13 +37,19 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   // /api/admin/orders/[id]/mark-paid, which also decrements stock and
   // awards points as part of that same transition — those side effects
   // must never be skippable by just picking "Processing" from the normal
-  // status dropdown.
+  // status dropdown. Also used below to only fire the "shipped" email on
+  // the actual Processing/Awaiting → Shipped transition, not on every
+  // subsequent Save (e.g. editing the tracking number after it's already
+  // shipped).
+  let previousStatus: OrderStatus | null = null;
   if (body.status) {
     const { data: current } = await supabase
       .from("orders")
       .select("status, payment_method")
       .eq("id", params.id)
       .single();
+
+    previousStatus = (current?.status as OrderStatus | undefined) ?? null;
 
     if (current?.status === "Awaiting Payment" && current.payment_method === "zelle" && body.status !== "Awaiting Payment") {
       return NextResponse.json(
@@ -61,6 +68,31 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Fire the "your order has shipped" email exactly once, on the transition
+  // into Shipped — not on every Save while it's already Shipped (e.g. a
+  // tracking-number correction after the fact).
+  if (body.status === "Shipped" && previousStatus !== "Shipped" && data?.shipping_email) {
+    const { data: items } = await supabase
+      .from("order_items")
+      .select("product_name, size, qty")
+      .eq("order_id", params.id);
+
+    await sendOrderShippedEmail({
+      toEmail: data.shipping_email,
+      orderNumber: data.order_number,
+      items: (items ?? []).map((i) => ({ productName: i.product_name, size: i.size, qty: i.qty })),
+      trackingNumber: data.tracking_number,
+      shipping: {
+        name: data.shipping_name ?? "",
+        addressLine1: data.shipping_address_line1 ?? "",
+        addressLine2: data.shipping_address_line2 ?? undefined,
+        city: data.shipping_city ?? "",
+        state: data.shipping_state ?? "",
+        zip: data.shipping_zip ?? "",
+      },
+    });
   }
 
   return NextResponse.json({ order: data });
