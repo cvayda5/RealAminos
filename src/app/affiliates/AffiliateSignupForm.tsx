@@ -52,20 +52,20 @@ export default function AffiliateSignupForm() {
     <form className="coa-search" onSubmit={handleSubmit}>
       <strong style={{ fontSize: 13 }}>Apply to Become an Affiliate</strong>
 
-      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+      <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
         <input
           required
           placeholder="First Name"
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
-          style={{ width: "auto", flex: 1 }}
+          style={{ width: "auto", flex: "1 1 140px", minWidth: 0 }}
         />
         <input
           required
           placeholder="Last Name"
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
-          style={{ width: "auto", flex: 1 }}
+          style={{ width: "auto", flex: "1 1 140px", minWidth: 0 }}
         />
       </div>
 
