@@ -85,6 +85,9 @@ export default async function AdminPointsPage() {
             <Link href="/admin/inventory" className="btn btn-outline">
               Inventory
             </Link>
+            <Link href="/admin/products" className="btn btn-outline">
+              Products
+            </Link>
           </div>
         </div>
 

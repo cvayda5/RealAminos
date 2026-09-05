@@ -21,6 +21,15 @@ export interface Product {
   description: string | null;
   is_active: boolean;
   created_at: string;
+  // Cover photo shown on the shop grid and product detail page. Null for
+  // any product staff hasn't uploaded a photo for yet (e.g. BAC Water) —
+  // the storefront falls back to the old generic CSS vial mark in that
+  // case. Either a path into /public/products (the 11 launch photos,
+  // committed straight into the repo) or a public Supabase Storage URL
+  // (anything uploaded later from /admin/products) — the storefront
+  // doesn't care which, it just renders whatever string is here as an
+  // <img src>.
+  image_url: string | null;
   // Certificate of Analysis for the lot currently in stock — see
   // 0014_coa.sql. All null for a product with no tested batch yet (e.g.
   // BAC Water, which isn't a peptide and has no lot/COA).

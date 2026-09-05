@@ -25,6 +25,8 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
 
       <div className="pd-layout">
         <ProductVisualCarousel
+          imageUrl={product.image_url}
+          productName={product.name}
           coaPreviewUrl={product.coa_preview_url}
           coaUrl={product.coa_url}
           lotNumber={product.lot_number}

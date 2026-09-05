@@ -68,8 +68,15 @@ export default function RedeemProductGrid({
           <div className="pcard" key={product.id}>
             <div className="thumb">
               <span className="badge-purity">&gt;99%</span>
-              <div className="cap" />
-              <div className="vial" />
+              {product.image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={product.image_url} alt={product.name} className="thumb-photo" />
+              ) : (
+                <>
+                  <div className="cap" />
+                  <div className="vial" />
+                </>
+              )}
             </div>
             <div className="body">
               <div className="cat">{product.category}</div>

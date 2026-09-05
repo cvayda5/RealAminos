@@ -2,16 +2,17 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { ProductWithVariants } from "@/types/database";
-import InventoryVariantRow from "./InventoryVariantRow";
+import CreateProductForm from "./CreateProductForm";
+import ProductRow from "./ProductRow";
 
-export default async function InventoryPage() {
+export default async function AdminProductsPage() {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login?next=/admin/inventory");
+    redirect("/login?next=/admin/products");
   }
 
   const { data: profile } = await supabase.from("profiles").select("is_admin").eq("id", user.id).single();
@@ -21,22 +22,19 @@ export default async function InventoryPage() {
       <main className="site-main">
         <div className="admin-lock">
           <h3>Staff Admin Login</h3>
-          <p>Internal inventory management — not linked from customer-facing pages.</p>
-          <p style={{ fontSize: 13.5, marginBottom: 18 }}>
+          <p>Internal catalog management — not linked from customer-facing pages.</p>
+          <p style={{ fontSize: 13.5 }}>
             You&apos;re signed in as <strong>{user.email}</strong>, but this account isn&apos;t
             marked as an admin.
           </p>
-          <div className="admin-note">
-            Promote this account with a SQL command in README.md, then refresh this page.
-          </div>
         </div>
       </main>
     );
   }
 
   // Public read policy (products_select_all / product_variants_select_all)
-  // means the caller's own session already sees everything here — no need
-  // for the service-role client just to list the catalog.
+  // means the caller's own session already sees everything here — same
+  // reasoning as /admin/inventory.
   const { data: products, error } = await supabase
     .from("products")
     .select("*, product_variants(*)")
@@ -44,23 +42,20 @@ export default async function InventoryPage() {
     .order("name")
     .returns<ProductWithVariants[]>();
 
-  const rows = (products ?? []).flatMap((p) =>
-    [...p.product_variants]
-      .sort((a, b) => a.sort_order - b.sort_order)
-      .map((v) => ({ product: p, variant: v }))
-  );
+  const categories = Array.from(new Set((products ?? []).map((p) => p.category))).sort();
 
   return (
     <main className="site-main">
       <div className="wrap" style={{ maxWidth: 1040 }}>
         <div className="admin-bar">
           <div>
-            <h1 style={{ fontSize: 24, margin: "0 0 4px" }}>Inventory</h1>
+            <h1 style={{ fontSize: 24, margin: "0 0 4px" }}>Products</h1>
             <p style={{ color: "var(--muted)", fontSize: 13.5, margin: 0, maxWidth: 620 }}>
-              Set how many units of each product+size are on hand. A size with 0 stock shows as
-              &quot;Out of Stock — Coming Soon&quot; on the storefront and can&apos;t be bought or
-              redeemed with points — no separate visibility toggle needed. Stock also drops
-              automatically by itself every time a real order for that size is placed.
+              Add new compounds to the catalog with a starting size, price, and cover photo, or
+              remove one that&apos;s no longer sold. Deleting a product doesn&apos;t change any
+              past order — those keep their own record of what was bought regardless. Additional
+              sizes, price changes, and stock counts for existing products are still managed on
+              the Inventory page.
             </p>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -85,10 +80,19 @@ export default async function InventoryPage() {
             <Link href="/admin/staff" className="btn btn-outline">
               Manage Staff
             </Link>
-            <Link href="/admin/products" className="btn btn-outline">
-              Products
+            <Link href="/admin/inventory" className="btn btn-outline">
+              Inventory
             </Link>
           </div>
+        </div>
+
+        <div className="card">
+          <strong>Add a new product</strong>
+          <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 4 }}>
+            Starts with one size and price — add more sizes for it on the Inventory page
+            afterward if it comes in more than one.
+          </p>
+          <CreateProductForm categories={categories} />
         </div>
 
         {error && <p className="error">{error.message}</p>}
@@ -97,21 +101,23 @@ export default async function InventoryPage() {
           <table className="admin-table">
             <thead>
               <tr>
+                <th>Photo</th>
                 <th>Product</th>
-                <th>Size</th>
-                <th>Price</th>
-                <th>Stock</th>
-                <th>Status</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>From</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ product, variant }) => (
-                <InventoryVariantRow key={variant.id} product={product} variant={variant} />
+              {products?.map((product) => (
+                <ProductRow key={product.id} product={product} categories={categories} />
               ))}
             </tbody>
           </table>
-          {rows.length === 0 && <p style={{ color: "var(--muted)", padding: 16 }}>No products yet.</p>}
+          {products?.length === 0 && (
+            <p style={{ color: "var(--muted)", padding: 16 }}>No products yet — add one above.</p>
+          )}
         </div>
       </div>
     </main>
