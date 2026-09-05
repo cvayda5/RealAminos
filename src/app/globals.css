@@ -30,6 +30,15 @@ input,select{ width:100%; padding:10px 12px; border:1.5px solid var(--line); bor
 .compliance-strip{ background:var(--ink); color:#d1d5db; font-size:12px; letter-spacing:.02em; text-align:center; padding:7px 12px; }
 .compliance-strip strong{ color:var(--orange); }
 
+/* ---------- beta launch promo banner ---------- */
+.promo-banner{ background:linear-gradient(135deg,var(--orange),var(--orange-dark)); color:white; display:flex; align-items:center; justify-content:center; gap:14px; font-size:13.5px; padding:10px 40px; text-align:center; }
+.promo-banner-text strong{ font-weight:800; }
+.promo-banner-close{ background:none; border:none; color:white; font-size:20px; line-height:1; opacity:.85; padding:2px 6px; flex-shrink:0; }
+.promo-banner-close:hover{ opacity:1; }
+@media (max-width:640px){
+  .promo-banner{ padding:9px 34px; font-size:12.5px; }
+}
+
 /* ---------- header ---------- */
 header.site{ background:var(--paper); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:40; }
 .nav-wrap{ max-width:1180px; margin:0 auto; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap; }
