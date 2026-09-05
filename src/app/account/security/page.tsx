@@ -56,6 +56,7 @@ export default function SecurityPage() {
   }
 
   return (
+    <main className="site-main">
     <div className="wrap">
       <h1>Two-Factor Authentication</h1>
       <div className="card">
@@ -89,5 +90,6 @@ export default function SecurityPage() {
         {error && <p className="error">{error}</p>}
       </div>
     </div>
+    </main>
   );
 }
