@@ -51,11 +51,12 @@ export default async function AdminProductsPage() {
           <div>
             <h1 style={{ fontSize: 24, margin: "0 0 4px" }}>Products</h1>
             <p style={{ color: "var(--muted)", fontSize: 13.5, margin: 0, maxWidth: 620 }}>
-              Add new compounds to the catalog with a starting size, price, and cover photo, or
-              remove one that&apos;s no longer sold. Deleting a product doesn&apos;t change any
-              past order — those keep their own record of what was bought regardless. Additional
-              sizes, price changes, and stock counts for existing products are still managed on
-              the Inventory page.
+              Add new compounds to the catalog with a starting size, price, and cover photo, edit
+              a product&apos;s photo/category/lot number/description/price right here, or remove
+              one that&apos;s no longer sold. Deleting a product doesn&apos;t change any past
+              order — those keep their own record of what was bought regardless. Adding an
+              additional size to a product, and stock counts, are still managed on the Inventory
+              page.
             </p>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -104,8 +105,9 @@ export default async function AdminProductsPage() {
                 <th>Photo</th>
                 <th>Product</th>
                 <th>Category</th>
+                <th>Lot #</th>
                 <th>Description</th>
-                <th>From</th>
+                <th>Price</th>
                 <th></th>
               </tr>
             </thead>

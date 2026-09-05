@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ProductWithVariants } from "@/types/database";
+import VariantPriceInput from "./VariantPriceInput";
 
 export default function ProductRow({
   product,
@@ -15,15 +16,13 @@ export default function ProductRow({
   const fileRef = useRef<HTMLInputElement>(null);
   const [category, setCategory] = useState(product.category);
   const [description, setDescription] = useState(product.description ?? "");
+  const [lotNumber, setLotNumber] = useState(product.lot_number ?? "");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const priceFrom = product.product_variants.reduce(
-    (min, v) => Math.min(min, v.price),
-    Infinity
-  );
+  const sortedVariants = [...product.product_variants].sort((a, b) => a.sort_order - b.sort_order);
 
   async function patch(form: FormData) {
     setError(null);
@@ -51,6 +50,15 @@ export default function ProductRow({
     setSaving(true);
     const form = new FormData();
     form.set("description", description);
+    await patch(form);
+    setSaving(false);
+  }
+
+  async function saveLotNumber() {
+    if (lotNumber === (product.lot_number ?? "")) return;
+    setSaving(true);
+    const form = new FormData();
+    form.set("lotNumber", lotNumber);
     await patch(form);
     setSaving(false);
   }
@@ -141,6 +149,17 @@ export default function ProductRow({
           ))}
         </datalist>
       </td>
+      <td>
+        <input
+          className="admin-track-input"
+          style={{ width: 110, fontFamily: "var(--mono)" }}
+          placeholder="—"
+          value={lotNumber}
+          onChange={(e) => setLotNumber(e.target.value)}
+          onBlur={saveLotNumber}
+          disabled={saving}
+        />
+      </td>
       <td style={{ maxWidth: 260 }}>
         <textarea
           className="admin-track-input"
@@ -153,10 +172,8 @@ export default function ProductRow({
         />
       </td>
       <td>
-        {Number.isFinite(priceFrom) ? (
-          <div className="price" style={{ fontSize: 13.5 }}>
-            ${priceFrom.toFixed(2)}
-          </div>
+        {sortedVariants.length > 0 ? (
+          sortedVariants.map((v) => <VariantPriceInput key={v.id} variant={v} />)
         ) : (
           <span style={{ color: "var(--muted)", fontSize: 12.5 }}>No sizes</span>
         )}

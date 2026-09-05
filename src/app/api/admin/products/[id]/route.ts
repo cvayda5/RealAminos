@@ -50,6 +50,14 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     const casNumber = String(form.get("casNumber") ?? "").trim();
     updates.cas_number = casNumber || null;
   }
+  if (form.has("lotNumber")) {
+    // Lot number is just the label — it doesn't touch coa_url/coa_purity_percent/
+    // etc, so editing it here doesn't create or remove a Certificate of
+    // Analysis. It's here mainly so staff can correct a typo or roll a
+    // product onto a new lot without needing direct database access.
+    const lotNumber = String(form.get("lotNumber") ?? "").trim();
+    updates.lot_number = lotNumber || null;
+  }
 
   const image = form.get("image");
   if (image instanceof File && image.size > 0) {
