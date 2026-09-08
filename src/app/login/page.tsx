@@ -228,6 +228,14 @@ function LoginForm() {
 
             <button className="btn" type="submit" style={{ marginTop: 14 }}>Log In</button>
             {error && <p className="error">{error}</p>}
+
+            <p style={{ fontSize: 13, textAlign: "center", marginTop: 14 }}>
+              Don&apos;t have an account?{" "}
+              <Link href="/signup" style={{ color: "var(--orange)", fontWeight: 600 }}>
+                Sign up
+              </Link>
+            </p>
+
             <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 10 }}>
               After your password, we&apos;ll email you a one-time code to finish logging in. For
               your security, you&apos;ll be automatically logged out after 8 hours and will need
