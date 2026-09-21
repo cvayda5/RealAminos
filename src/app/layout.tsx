@@ -12,6 +12,16 @@ export const metadata = {
   description: "High-purity peptide and small-molecule research compounds. Research Use Only.",
 };
 
+// viewportFit: "cover" is what lets env(safe-area-inset-bottom) resolve to a
+// real value on iPhone instead of 0 — used by the cart drawer's footer (see
+// .drawer-foot in globals.css) so its buttons never sit flush against the
+// bottom edge Safari's own chrome occupies.
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 // Next.js aggressively caches fetch() responses by default, including the
 // network call Supabase makes under the hood to check who's logged in. Left
 // alone, that means the header can show a stale login state — logged in on

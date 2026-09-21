@@ -567,6 +567,9 @@ export default function CartDrawer() {
                           </p>
                         </div>
                       </div>
+                      <p style={{ margin: "10px 0 0", fontSize: 12.5, color: "var(--ink-2)" }}>
+                        Using phone? Zelle to the email <strong>info@shoprealaminos.com</strong>.
+                      </p>
                       <p style={{ margin: "10px 0 0", fontSize: 12.5, fontWeight: 800, color: "#b91c1c" }}>
                         You MUST put {zelleOrder.orderNumber} in the Zelle payment note, or your payment
                         will be refunded instead of fulfilled.
