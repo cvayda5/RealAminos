@@ -4,6 +4,8 @@
 // itself, since the order's already been saved as Shipped by the time this
 // runs. Callers should log/ignore the boolean result.
 
+import { wrapEmailHtml, orderNumberPill, BRAND } from "./emailLayout";
+
 type OrderShippedInput = {
   toEmail: string;
   orderNumber: string;
@@ -41,7 +43,7 @@ export async function sendOrderShippedEmail(input: OrderShippedInput): Promise<b
   const hasTracking = !!input.trackingNumber && input.trackingNumber.trim().length > 0;
   const trackingLineText = hasTracking ? `\nTracking Number: ${input.trackingNumber}\n` : "";
   const trackingLineHtml = hasTracking
-    ? `<p style="font-size:14px;margin:16px 0 4px;"><strong>Tracking Number:</strong> ${input.trackingNumber}</p>`
+    ? `<p style="font-size:14px;margin:16px 0 4px;color:${BRAND.ink};"><strong>Tracking Number:</strong> ${input.trackingNumber}</p>`
     : "";
 
   const text = `Your order has shipped!
@@ -58,23 +60,32 @@ You can check your order status any time on the My Orders page.
 
 Products are for laboratory research use only and are not for human or veterinary use.`;
 
-  const html = `
-    <div style="font-family:sans-serif;color:#111827;max-width:480px;margin:0 auto;">
-      <h2 style="margin-bottom:4px;">Your order has shipped!</h2>
-      <p style="color:#6b7280;font-size:14px;margin-top:0;">Order #${input.orderNumber}</p>
-      <p style="font-size:14px;margin:18px 0 4px;"><strong>What shipped:</strong></p>
-      <table style="width:100%;border-collapse:collapse;font-size:14px;">
-        ${itemRowsHtml}
-      </table>
-      ${trackingLineHtml}
-      <p style="font-size:14px;margin-top:22px;margin-bottom:4px;"><strong>Shipping to:</strong></p>
-      <p style="font-size:14px;margin-top:0;white-space:pre-line;">${addressText}</p>
-      <p style="font-size:13px;color:#6b7280;margin-top:24px;">
-        You can check your order status any time on the My Orders page. Products are for
-        laboratory research use only and are not for human or veterinary use.
-      </p>
+  const bodyHtml = `
+    <div style="text-align:center;margin-bottom:22px;">
+      <div style="display:inline-block;width:44px;height:44px;line-height:44px;border-radius:999px;background:#fff7ed;color:${
+        BRAND.orangeDark
+      };font-size:20px;margin-bottom:14px;">&#128230;</div>
+      <h1 style="margin:0 0 8px;font-size:20px;color:${BRAND.ink};">Your order has shipped!</h1>
+      <div>${orderNumberPill(input.orderNumber)}</div>
     </div>
+    <p style="font-size:13px;font-weight:700;color:${BRAND.ink};margin:0 0 8px;">What shipped</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;color:${BRAND.ink};margin-bottom:4px;">
+      ${itemRowsHtml}
+    </table>
+    ${trackingLineHtml}
+    <div style="margin-top:22px;padding-top:20px;border-top:1px solid ${BRAND.line};">
+      <p style="font-size:13px;font-weight:700;color:${BRAND.ink};margin:0 0 6px;">Shipping to</p>
+      <p style="font-size:14px;color:${BRAND.muted};margin:0;white-space:pre-line;line-height:1.5;">${addressText}</p>
+    </div>
+    <p style="font-size:13px;color:${BRAND.muted};margin:22px 0 0;line-height:1.6;">
+      You can check your order status any time on the My Orders page.
+    </p>
   `;
+
+  const html = wrapEmailHtml({
+    preheader: `Order #${input.orderNumber} has shipped${hasTracking ? " — tracking included" : ""}`,
+    bodyHtml,
+  });
 
   try {
     const res = await fetch("https://api.resend.com/emails", {

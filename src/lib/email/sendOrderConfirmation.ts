@@ -9,6 +9,8 @@
 // the order itself, since the order is already written to the database by
 // the time this runs. Callers should log/ignore the boolean result.
 
+import { wrapEmailHtml, orderNumberPill, BRAND } from "./emailLayout";
+
 type OrderConfirmationInput = {
   toEmail: string;
   orderNumber: string;
@@ -92,30 +94,41 @@ You can check your order status any time on the My Orders page.
 
 This confirms your payment went through and your order is now being processed. Products are for laboratory research use only and are not for human or veterinary use.`;
 
-  const html = `
-    <div style="font-family:sans-serif;color:#111827;max-width:480px;margin:0 auto;">
-      <h2 style="margin-bottom:4px;">Your order is confirmed!</h2>
-      <p style="color:#6b7280;font-size:14px;margin-top:0;">Order #${input.orderNumber}</p>
-      <table style="width:100%;border-collapse:collapse;font-size:14px;">
-        ${itemRowsHtml}
-        <tr><td style="padding-top:10px;">Subtotal</td>
-            <td style="padding-top:10px;text-align:right;">$${input.subtotal.toFixed(2)}</td></tr>
-        ${discountLineHtml}
-        ${shippingLineHtml}
-        <tr><td style="padding-top:6px;font-weight:700;border-top:1px solid #e5e7eb;">Total</td>
-            <td style="padding-top:6px;font-weight:700;border-top:1px solid #e5e7eb;text-align:right;">$${grandTotal.toFixed(
-              2
-            )}</td></tr>
-      </table>
-      <p style="font-size:14px;margin-top:22px;margin-bottom:4px;"><strong>Shipping to:</strong></p>
-      <p style="font-size:14px;margin-top:0;white-space:pre-line;">${addressText}</p>
-      <p style="font-size:13px;color:#6b7280;margin-top:24px;">
-        You can check your order status any time on the My Orders page. This confirms your
-        payment went through and your order is now being processed. Products are for laboratory
-        research use only and are not for human or veterinary use.
-      </p>
+  const bodyHtml = `
+    <div style="text-align:center;margin-bottom:22px;">
+      <div style="display:inline-block;width:44px;height:44px;line-height:44px;border-radius:999px;background:#ecfdf5;color:${
+        BRAND.green
+      };font-size:22px;font-weight:700;margin-bottom:14px;">&#10003;</div>
+      <h1 style="margin:0 0 8px;font-size:20px;color:${BRAND.ink};">Your order is confirmed!</h1>
+      <div>${orderNumberPill(input.orderNumber)}</div>
     </div>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;color:${BRAND.ink};">
+      ${itemRowsHtml}
+      <tr><td style="padding-top:10px;color:${BRAND.muted};">Subtotal</td>
+          <td style="padding-top:10px;text-align:right;">$${input.subtotal.toFixed(2)}</td></tr>
+      ${discountLineHtml}
+      ${shippingLineHtml}
+      <tr><td style="padding-top:10px;font-weight:700;border-top:1px solid ${
+        BRAND.line
+      };">Total</td>
+          <td style="padding-top:10px;font-weight:700;border-top:1px solid ${
+            BRAND.line
+          };text-align:right;">$${grandTotal.toFixed(2)}</td></tr>
+    </table>
+    <div style="margin-top:26px;padding-top:20px;border-top:1px solid ${BRAND.line};">
+      <p style="font-size:13px;font-weight:700;color:${BRAND.ink};margin:0 0 6px;">Shipping to</p>
+      <p style="font-size:14px;color:${BRAND.muted};margin:0;white-space:pre-line;line-height:1.5;">${addressText}</p>
+    </div>
+    <p style="font-size:13px;color:${BRAND.muted};margin:22px 0 0;line-height:1.6;">
+      You can check your order status any time on the My Orders page. This confirms your
+      payment went through and your order is now being processed.
+    </p>
   `;
+
+  const html = wrapEmailHtml({
+    preheader: `Order #${input.orderNumber} confirmed — total $${grandTotal.toFixed(2)}`,
+    bodyHtml,
+  });
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
