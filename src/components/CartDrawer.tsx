@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/lib/cart/CartContext";
@@ -39,6 +39,40 @@ export default function CartDrawer() {
   const [waiverChecked, setWaiverChecked] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // `100dvh` (globals.css) is what the previous fix relied on, but iOS
+  // Safari's dvh only reacts to ITS OWN chrome collapsing (address bar/
+  // tab bar) — it does NOT shrink for the on-screen keyboard, which is why
+  // the checkout button could still end up covered when the keyboard is
+  // up (e.g. typing a discount code). window.visualViewport DOES report
+  // the keyboard, live — its height shrinks and its offsetTop shifts as
+  // the keyboard opens/closes or the page gets nudged to keep the focused
+  // input visible. Mirroring both into CSS variables lets .drawer in
+  // globals.css pin itself to the actual visible area instead of the
+  // static layout viewport, so the footer (and its button) can never end
+  // up hidden behind the keyboard. Falls back to the existing 100dvh/top:0
+  // wherever visualViewport isn't supported (see the var() fallbacks in
+  // globals.css) — this only makes things MORE correct, never less.
+  useEffect(() => {
+    if (!isDrawerOpen) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    function syncViewport() {
+      document.documentElement.style.setProperty("--vv-height", `${vv!.height}px`);
+      document.documentElement.style.setProperty("--vv-top", `${vv!.offsetTop}px`);
+    }
+
+    syncViewport();
+    vv.addEventListener("resize", syncViewport);
+    vv.addEventListener("scroll", syncViewport);
+    return () => {
+      vv.removeEventListener("resize", syncViewport);
+      vv.removeEventListener("scroll", syncViewport);
+      document.documentElement.style.removeProperty("--vv-height");
+      document.documentElement.style.removeProperty("--vv-top");
+    };
+  }, [isDrawerOpen]);
 
   // 'cart' shows the line items + waiver. 'shipping' collects where the
   // order actually ships to. 'payment' is where the customer picks Card
