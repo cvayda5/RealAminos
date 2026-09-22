@@ -40,37 +40,46 @@ export default function CartDrawer() {
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // `100dvh` (globals.css) is what the previous fix relied on, but iOS
-  // Safari's dvh only reacts to ITS OWN chrome collapsing (address bar/
-  // tab bar) — it does NOT shrink for the on-screen keyboard, which is why
-  // the checkout button could still end up covered when the keyboard is
-  // up (e.g. typing a discount code). window.visualViewport DOES report
-  // the keyboard, live — its height shrinks and its offsetTop shifts as
-  // the keyboard opens/closes or the page gets nudged to keep the focused
-  // input visible. Mirroring both into CSS variables lets .drawer in
-  // globals.css pin itself to the actual visible area instead of the
-  // static layout viewport, so the footer (and its button) can never end
-  // up hidden behind the keyboard. Falls back to the existing 100dvh/top:0
-  // wherever visualViewport isn't supported (see the var() fallbacks in
-  // globals.css) — this only makes things MORE correct, never less.
+  // `100dvh` (globals.css) reacts to Safari's OWN chrome collapsing
+  // (address bar/tab bar) but not to the on-screen keyboard, which is why
+  // the checkout button could still end up covered while typing.
+  //
+  // An earlier attempt at fixing this also tracked window.visualViewport's
+  // offsetTop and used it to move the drawer's `top`, which backfired badly
+  // — offsetTop can read as a stray nonzero value for reasons that have
+  // nothing to do with the keyboard (scroll position, address-bar animation
+  // mid-flight, etc.), and shifting a position:fixed element by that amount
+  // pushed the whole drawer down and off the bottom of the screen even with
+  // no keyboard open at all. That's reverted.
+  //
+  // This only ever shrinks the drawer's height, never repositions it
+  // (`top` stays a plain 0 in globals.css) — and only when
+  // visualViewport.height is CLEARLY smaller than the window (a real
+  // keyboard covering a meaningful chunk of the screen, not just the small
+  // few-pixel wobble Safari's chrome can cause on its own). Anything short
+  // of that threshold falls straight back to the existing 100dvh behavior.
   useEffect(() => {
     if (!isDrawerOpen) return;
     const vv = window.visualViewport;
     if (!vv) return;
 
     function syncViewport() {
-      document.documentElement.style.setProperty("--vv-height", `${vv!.height}px`);
-      document.documentElement.style.setProperty("--vv-top", `${vv!.offsetTop}px`);
+      const shrunkBy = window.innerHeight - vv!.height;
+      // 150px is comfortably more than any address-bar/chrome wobble, and
+      // comfortably less than a real keyboard (which is normally 250px+ on
+      // an iPhone) — so this only ever engages for an actual keyboard.
+      if (shrunkBy > 150) {
+        document.documentElement.style.setProperty("--vv-height", `${vv!.height}px`);
+      } else {
+        document.documentElement.style.removeProperty("--vv-height");
+      }
     }
 
     syncViewport();
     vv.addEventListener("resize", syncViewport);
-    vv.addEventListener("scroll", syncViewport);
     return () => {
       vv.removeEventListener("resize", syncViewport);
-      vv.removeEventListener("scroll", syncViewport);
       document.documentElement.style.removeProperty("--vv-height");
-      document.documentElement.style.removeProperty("--vv-top");
     };
   }, [isDrawerOpen]);
 
@@ -418,7 +427,7 @@ export default function CartDrawer() {
         ) : step === "shipping" ? (
           <form onSubmit={handleContinueToPayment} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
             <div className="drawer-body">
-              <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 0 }}>
+              <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "0 0 6px" }}>
                 We just need to know where this ships to — you&apos;ll pick how to pay on the
                 next screen.
               </p>

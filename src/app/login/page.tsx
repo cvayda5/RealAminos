@@ -147,16 +147,17 @@ function LoginForm() {
           <h1>Enter your login code</h1>
           <div className="card">
             <p style={{ fontSize: 13.5, color: "var(--muted)" }}>
-              We emailed a 6-digit code to <strong>{email}</strong>. Enter it below to finish
+              We emailed an 8-digit code to <strong>{email}</strong>. Enter it below to finish
               logging in.
             </p>
             <form onSubmit={handleEmailCodeSubmit}>
-              <label htmlFor="emailCode">6-digit code from your email</label>
+              <label htmlFor="emailCode">8-digit code from your email</label>
               <input
                 id="emailCode"
                 required
                 inputMode="numeric"
                 autoComplete="one-time-code"
+                maxLength={8}
                 value={emailCode}
                 onChange={(e) => setEmailCode(e.target.value)}
               />

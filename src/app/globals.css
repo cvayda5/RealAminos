@@ -217,16 +217,30 @@ footer.site{ background:var(--ink); color:#cbd5e1; padding:52px 24px 28px; margi
    chrome (address bar collapsing) but not to the on-screen keyboard, so
    the footer could still end up hidden behind the keyboard. CartDrawer.tsx
    fixes that the rest of the way with the window.visualViewport API,
-   writing the two CSS variables below whenever the keyboard opens/closes —
-   var()'s second argument is the fallback for any browser where that
-   effect never runs (no visualViewport support, or the drawer JS hasn't
-   mounted yet), so this never regresses past the dvh-only behavior. */
-.drawer{ position:fixed; top:0; top:var(--vv-top, 0px); right:0; height:100%; height:100dvh; height:var(--vv-height, 100dvh); width:420px; max-width:92vw; background:white; z-index:91; transform:translateX(100%); transition:.25s; display:flex; flex-direction:column; box-shadow:-8px 0 30px rgba(0,0,0,.15); }
+   writing --vv-height whenever the keyboard is clearly open (a real,
+   sizeable shrink — not just address-bar wobble). var()'s second argument
+   is the fallback for any browser where that never runs (no
+   visualViewport support, or the drawer JS hasn't mounted yet), so this
+   never regresses past the dvh-only behavior.
+
+   NOTE: an earlier version of this also repositioned `top` off
+   visualViewport's offsetTop — that's gone. It caused the whole drawer to
+   shift down and clip off the bottom of the screen even with no keyboard
+   open, because offsetTop can read as nonzero for reasons unrelated to
+   the keyboard. `top` stays a plain, static 0 — only height ever changes. */
+.drawer{ position:fixed; top:0; right:0; height:100%; height:100dvh; height:var(--vv-height, 100dvh); width:420px; max-width:92vw; background:white; z-index:91; transform:translateX(100%); transition:.25s; display:flex; flex-direction:column; box-shadow:-8px 0 30px rgba(0,0,0,.15); }
 .drawer.show{ transform:translateX(0); }
-.drawer-head{ display:flex; justify-content:space-between; align-items:center; padding:16px 22px; border-bottom:1px solid var(--line); }
-.drawer-head h3{ margin:0; font-size:18px; }
+.drawer-head{ display:flex; justify-content:space-between; align-items:center; padding:14px 22px; border-bottom:1px solid var(--line); }
+.drawer-head h3{ margin:0; font-size:17px; }
 .drawer-close{ background:none; border:none; font-size:20px; color:var(--muted); }
-.drawer-body{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px 22px; }
+.drawer-body{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px 22px; }
+/* Tighter vertical rhythm than the site-wide `label`/`input` rules
+   (globals.css, used by login/signup/admin forms too) — scoped to the
+   drawer only, so the Shipping Info step's 6-field form takes noticeably
+   less height without touching any form outside the cart. */
+.drawer-body label{ margin:9px 0 4px; font-size:12.5px; }
+.drawer-body label:first-of-type{ margin-top:2px; }
+.drawer-body input, .drawer-body select{ padding:8px 10px; font-size:13.5px; }
 .cart-line{ display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
 .cart-line .thumb-sm{ width:46px; height:46px; border-radius:8px; background:var(--orange-light); flex-shrink:0; display:flex; align-items:center; justify-content:center; }
 .cart-line .info{ flex:1; }
