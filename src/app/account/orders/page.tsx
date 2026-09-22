@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus, OrderWithItems } from "@/types/database";
+import ZellePaymentStatus from "@/components/ZellePaymentStatus";
 
 const STEPS: OrderStatus[] = ["Processing", "Shipped", "Delivered"];
 
@@ -100,11 +101,7 @@ export default async function OrdersPage() {
                       Payments sent without the order number in the note will be refunded, not
                       fulfilled.
                     </p>
-                    <p style={{ margin: 0, fontSize: 12.5, color: "var(--muted)" }}>
-                      Once we confirm your payment, this order moves into the same
-                      Processing → Shipped → Delivered timeline as every other order — Zelle
-                      orders don&apos;t take any longer to fulfill.
-                    </p>
+                    <ZellePaymentStatus orderId={order.id} createdAt={order.created_at} />
                   </div>
                 </div>
               ) : (

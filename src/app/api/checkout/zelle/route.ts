@@ -209,7 +209,13 @@ export async function POST(request: Request) {
 
   return NextResponse.json(
     {
+      orderId: order.id,
       orderNumber: order.order_number,
+      // Server timestamp, not Date.now() on the client — this is what the
+      // customer's 20-minute "I've Sent My Zelle Payment" countdown
+      // (ZellePaymentStatus.tsx) anchors to, so it always matches exactly
+      // what /api/orders/[id]/mark-paid itself checks server-side.
+      createdAt: order.created_at,
       amountDue,
       zelleDiscountAmount,
       grandTotalBeforeDiscount: preZelleGrandTotal,

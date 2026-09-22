@@ -113,6 +113,15 @@ export interface Order {
   // total + shipping_fee to get what the customer actually owes/paid via
   // Zelle — see src/app/api/checkout/zelle/route.ts.
   zelle_discount_amount: number;
+  // Who actually triggered this Zelle order's finalize step — 'customer'
+  // via the self-service "I've Sent My Zelle Payment" button (within its
+  // 20-minute window) or 'staff' via "Mark Paid & Fulfill" on
+  // /admin/orders (no time limit). Null for non-Zelle orders and for any
+  // order placed before 0019_zelle_self_mark_paid.sql. Used to show staff
+  // a "customer self-confirmed — verify before shipping" reminder, since a
+  // self-reported payment hasn't actually been checked against real Zelle
+  // activity yet. See src/lib/orders/finalizeZellePayment.ts.
+  zelle_marked_paid_by: "customer" | "staff" | null;
 }
 
 // A single row in a customer's points ledger — see 0007_points.sql and

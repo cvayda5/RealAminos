@@ -105,6 +105,11 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
             Verify note says {order.order_number} before marking paid
           </div>
         )}
+        {order.status === "Processing" && order.zelle_marked_paid_by === "customer" && (
+          <div style={{ fontSize: 11, fontWeight: 800, color: "#b91c1c", marginTop: 4 }}>
+            Customer self-confirmed — verify Zelle before shipping
+          </div>
+        )}
       </td>
       <td>
         {isAwaitingPayment ? (

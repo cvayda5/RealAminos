@@ -7,6 +7,7 @@ import { useCart } from "@/lib/cart/CartContext";
 import { createClient } from "@/lib/supabase/client";
 import type { ShippingDetails } from "@/types/database";
 import { calculateShippingFee, FREE_SHIPPING_THRESHOLD } from "@/lib/shipping/rate";
+import ZellePaymentStatus from "@/components/ZellePaymentStatus";
 
 // Kept in sync by eye with ZELLE_DISCOUNT_RATE in
 // src/app/api/checkout/zelle/route.ts — this is display-only (the server
@@ -15,8 +16,10 @@ import { calculateShippingFee, FREE_SHIPPING_THRESHOLD } from "@/lib/shipping/ra
 const ZELLE_DISCOUNT_PERCENT = 5;
 
 interface ZelleOrderResult {
+  orderId: string;
   orderNumber: string;
   amountDue: number;
+  createdAt: string;
 }
 
 const EMPTY_SHIPPING: ShippingDetails = {
@@ -223,7 +226,12 @@ export default function CartDrawer() {
       return;
     }
 
-    setZelleOrder({ orderNumber: body.orderNumber, amountDue: body.amountDue });
+    setZelleOrder({
+      orderId: body.orderId,
+      orderNumber: body.orderNumber,
+      amountDue: body.amountDue,
+      createdAt: body.createdAt,
+    });
     // The order is now real (unpaid, but real — any redeemed reward points
     // are already spent/linked to it) — clear the cart the same way a
     // completed Card order does, rather than leaving these items sitting in
@@ -574,10 +582,10 @@ export default function CartDrawer() {
                         You MUST put {zelleOrder.orderNumber} in the Zelle payment note, or your payment
                         will be refunded instead of fulfilled.
                       </p>
-                      <p style={{ margin: "6px 0 0", fontSize: 11.5, color: "var(--muted)" }}>
-                        Zelle orders fulfill on the exact same timeline as card orders once payment is
-                        confirmed — no extra wait. You can find these instructions again anytime on the
-                        My Orders page.
+                      <ZellePaymentStatus orderId={zelleOrder.orderId} createdAt={zelleOrder.createdAt} />
+                      <p style={{ margin: "10px 0 0", fontSize: 11.5, color: "var(--muted)" }}>
+                        You can also find these instructions and the button above anytime on the My
+                        Orders page, as long as you&apos;re still inside the 20-minute window.
                       </p>
                     </>
                   )}
