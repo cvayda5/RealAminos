@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { NewOrderPayload, PointTransaction } from "@/types/database";
 import { calculateShippingFee } from "@/lib/shipping/rate";
 import { resolveVariant } from "@/lib/inventory/resolveVariant";
+import { sendAdminOrderNotification } from "@/lib/email/sendAdminOrderNotification";
 
 // 5% off for choosing Zelle over a card — in exchange for us not getting
 // instant payment confirmation the way Whop gives us. See the big comment
@@ -206,6 +207,17 @@ export async function POST(request: Request) {
   if (rewardTxIds.length > 0) {
     await admin.from("point_transactions").update({ order_id: order.id }).in("id", rewardTxIds);
   }
+
+  // Fire-and-forget — a failed notification email should never fail the
+  // order itself (sendAdminOrderNotification already never throws).
+  await sendAdminOrderNotification({
+    orderNumber: order.order_number,
+    paymentMethod: "zelle",
+    awaitingPayment: true,
+    items: normalizedItems.map((i) => ({ productName: i.productName, size: i.size, qty: i.qty })),
+    amountDue,
+    shipping: { name: shipping.name, city: shipping.city, state: shipping.state },
+  });
 
   return NextResponse.json(
     {
