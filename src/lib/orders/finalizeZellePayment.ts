@@ -84,16 +84,12 @@ export async function finalizeZellePayment(
     }
   }
 
-  const pointsEarned = Math.floor(order.total ?? order.subtotal);
-  if (pointsEarned > 0) {
-    await admin.from("point_transactions").insert({
-      user_id: order.user_id,
-      points: pointsEarned,
-      type: "earned",
-      order_id: order.id,
-      description: `Order ${order.order_number}`,
-    });
-  }
+  // Points are NOT awarded here anymore — see awardZellePointsOnShip below
+  // for why. This step only ever confirms the order is finalized/paid
+  // enough to start fulfillment; it never means the payment itself has
+  // actually been checked against real Zelle activity (the customer's own
+  // "I've Sent My Zelle Payment" button reaches this exact same code with
+  // zero verification — that's the whole point of it being self-service).
 
   // This is what makes a Zelle order take the same amount of time to
   // fulfill as any other order — it drops into the exact same
@@ -134,4 +130,40 @@ export async function finalizeZellePayment(
   }
 
   return { ok: true };
+}
+
+// Awards the points a Zelle order earned, but only once staff have actually
+// verified the money showed up and moved the order to Shipped — not at
+// Processing (see the removed block above finalizeZellePayment for why that
+// used to happen too early). Card/Whop orders don't need this: their points
+// are already awarded at real, webhook-verified payment time in
+// src/app/api/webhooks/whop/route.ts, so this function is a no-op for
+// anything that isn't payment_method === "zelle".
+//
+// Safe to call on every Shipped transition, including ones that aren't the
+// very first — callers are expected to already guard with
+// `previousStatus !== "Shipped"` (same guard the shipped-email send uses) so
+// this only ever runs once per order, but there's no separate "have we
+// already paid out points for this order" check here beyond that, so don't
+// call this from anywhere that could re-fire on an already-Shipped order.
+export async function awardZellePointsOnShip(
+  admin: ReturnType<typeof createAdminClient>,
+  order: Pick<OrderWithItems, "id" | "order_number" | "user_id" | "payment_method" | "total" | "subtotal">
+): Promise<void> {
+  if (order.payment_method !== "zelle") return;
+
+  const pointsEarned = Math.floor(order.total ?? order.subtotal);
+  if (pointsEarned <= 0) return;
+
+  const { error } = await admin.from("point_transactions").insert({
+    user_id: order.user_id,
+    points: pointsEarned,
+    type: "earned",
+    order_id: order.id,
+    description: `Order ${order.order_number}`,
+  });
+
+  if (error) {
+    console.error("awardZellePointsOnShip: failed to insert point_transactions row", order.id, error.message);
+  }
 }

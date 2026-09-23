@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { purchaseLabel } from "@/lib/shipping/shippo";
 import { sendOrderShippedEmail } from "@/lib/email/sendOrderShipped";
+import { awardZellePointsOnShip } from "@/lib/orders/finalizeZellePayment";
 import type { Order, OrderStatus } from "@/types/database";
 
 interface Body {
@@ -40,9 +42,28 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("status, order_number, shipping_email, shipping_name, shipping_address_line1, shipping_address_line2, shipping_city, shipping_state, shipping_zip")
+    .select(
+      "status, order_number, shipping_email, shipping_name, shipping_address_line1, shipping_address_line2, shipping_city, shipping_state, shipping_zip, payment_method, user_id, total, subtotal"
+    )
     .eq("id", params.id)
-    .single<Pick<Order, "status" | "order_number" | "shipping_email" | "shipping_name" | "shipping_address_line1" | "shipping_address_line2" | "shipping_city" | "shipping_state" | "shipping_zip">>();
+    .single<
+      Pick<
+        Order,
+        | "status"
+        | "order_number"
+        | "shipping_email"
+        | "shipping_name"
+        | "shipping_address_line1"
+        | "shipping_address_line2"
+        | "shipping_city"
+        | "shipping_state"
+        | "shipping_zip"
+        | "payment_method"
+        | "user_id"
+        | "total"
+        | "subtotal"
+      >
+    >();
 
   if (fetchError || !order) {
     return NextResponse.json({ error: "Order not found." }, { status: 404 });
@@ -94,26 +115,41 @@ export async function POST(request: Request, { params }: { params: { id: string 
     );
   }
 
-  if (nextStatus === "Shipped" && previousStatus !== "Shipped" && order.shipping_email) {
-    const { data: items } = await supabase
-      .from("order_items")
-      .select("product_name, size, qty")
-      .eq("order_id", params.id);
-
-    await sendOrderShippedEmail({
-      toEmail: order.shipping_email,
-      orderNumber: order.order_number,
-      items: (items ?? []).map((i) => ({ productName: i.product_name, size: i.size, qty: i.qty })),
-      trackingNumber: label.trackingNumber,
-      shipping: {
-        name: order.shipping_name ?? "",
-        addressLine1: order.shipping_address_line1 ?? "",
-        addressLine2: order.shipping_address_line2 ?? undefined,
-        city: order.shipping_city ?? "",
-        state: order.shipping_state ?? "",
-        zip: order.shipping_zip ?? "",
-      },
+  if (nextStatus === "Shipped" && previousStatus !== "Shipped") {
+    // Zelle points are awarded here (not back at Processing) — see
+    // awardZellePointsOnShip in finalizeZellePayment.ts for why. Kept
+    // separate from the shipping_email guard below since points shouldn't
+    // depend on whether we happen to have an email on file.
+    await awardZellePointsOnShip(createAdminClient(), {
+      id: params.id,
+      order_number: order.order_number,
+      user_id: order.user_id,
+      payment_method: order.payment_method,
+      total: order.total,
+      subtotal: order.subtotal,
     });
+
+    if (order.shipping_email) {
+      const { data: items } = await supabase
+        .from("order_items")
+        .select("product_name, size, qty")
+        .eq("order_id", params.id);
+
+      await sendOrderShippedEmail({
+        toEmail: order.shipping_email,
+        orderNumber: order.order_number,
+        items: (items ?? []).map((i) => ({ productName: i.product_name, size: i.size, qty: i.qty })),
+        trackingNumber: label.trackingNumber,
+        shipping: {
+          name: order.shipping_name ?? "",
+          addressLine1: order.shipping_address_line1 ?? "",
+          addressLine2: order.shipping_address_line2 ?? undefined,
+          city: order.shipping_city ?? "",
+          state: order.shipping_state ?? "",
+          zip: order.shipping_zip ?? "",
+        },
+      });
+    }
   }
 
   return NextResponse.json({ order: updated, labelUrl: label.labelUrl });

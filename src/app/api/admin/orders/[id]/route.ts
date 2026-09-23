@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { OrderStatus } from "@/types/database";
 import { sendOrderShippedEmail } from "@/lib/email/sendOrderShipped";
+import { awardZellePointsOnShip } from "@/lib/orders/finalizeZellePayment";
 
 interface Body {
   status?: OrderStatus;
@@ -43,14 +44,16 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   // subsequent Save (e.g. editing the tracking number after it's already
   // shipped).
   let previousStatus: OrderStatus | null = null;
+  let previousOrder: { payment_method: string; user_id: string; order_number: string; total: number | null; subtotal: number } | null = null;
   if (body.status) {
     const { data: current } = await supabase
       .from("orders")
-      .select("status, payment_method")
+      .select("status, payment_method, user_id, order_number, total, subtotal")
       .eq("id", params.id)
       .single();
 
     previousStatus = (current?.status as OrderStatus | undefined) ?? null;
+    previousOrder = current ?? null;
 
     if (current?.status === "Awaiting Payment" && current.payment_method === "zelle" && body.status !== "Awaiting Payment") {
       return NextResponse.json(
@@ -69,6 +72,24 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Award Zelle points exactly once, on the transition into Shipped — this
+  // is the whole fix for the points/Zelle loophole: staff verifying and
+  // shipping the order is the only thing that ever awards points for a
+  // Zelle order now. Deliberately not gated on shipping_email (unlike the
+  // shipped-email send below) since points shouldn't depend on whether we
+  // have an email on file. No-ops for card/Whop orders (already paid out at
+  // webhook time).
+  if (body.status === "Shipped" && previousStatus !== "Shipped" && previousOrder) {
+    await awardZellePointsOnShip(createAdminClient(), {
+      id: params.id,
+      order_number: previousOrder.order_number,
+      user_id: previousOrder.user_id,
+      payment_method: previousOrder.payment_method as "card" | "zelle",
+      total: previousOrder.total,
+      subtotal: previousOrder.subtotal,
+    });
   }
 
   // Fire the "your order has shipped" email exactly once, on the transition
