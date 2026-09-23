@@ -28,7 +28,12 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const [weightOz, setWeightOz] = useState("4");
+  // Staff type this in lbs (matches how Shippo itself shows package weight)
+  // — converted to ounces right at the API boundary below, since the
+  // backend/DB (package_weight_oz, shippo.ts's mass_unit:"oz") stays in oz
+  // either way. 0.25 lbs = 4oz, the same default this used before the
+  // lbs/oz switch.
+  const [weightLbs, setWeightLbs] = useState("0.25");
   const [rates, setRates] = useState<ShippingRateOption[] | null>(null);
   const [selectedRateId, setSelectedRateId] = useState<string | null>(null);
   const [gettingRates, setGettingRates] = useState(false);
@@ -43,7 +48,7 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
     const res = await fetch(`/api/admin/orders/${order.id}/shipping-rates`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ weightOz: Number(weightOz) }),
+      body: JSON.stringify({ weightOz: Number(weightLbs) * 16 }),
     });
     const body = await res.json().catch(() => ({}));
     setGettingRates(false);
@@ -67,7 +72,7 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
         rateObjectId: rate.objectId,
         carrier: rate.provider,
         serviceLevelName: rate.serviceLevelName,
-        weightOz: Number(weightOz),
+        weightOz: Number(weightLbs) * 16,
       }),
     });
     const body = await res.json().catch(() => ({}));
@@ -232,12 +237,12 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
                 <input
                   className="admin-track-input"
                   style={{ width: 56 }}
-                  value={weightOz}
-                  onChange={(e) => setWeightOz(e.target.value)}
-                  placeholder="oz"
-                  title="Package weight, in ounces"
+                  value={weightLbs}
+                  onChange={(e) => setWeightLbs(e.target.value)}
+                  placeholder="lbs"
+                  title="Package weight, in pounds"
                 />
-                <span style={{ fontSize: 11, color: "var(--muted)" }}>oz</span>
+                <span style={{ fontSize: 11, color: "var(--muted)" }}>lbs</span>
                 <button className="admin-save" onClick={getRates} disabled={gettingRates} style={{ marginTop: 0 }}>
                   {gettingRates ? "Getting Rates…" : order.label_url ? "Re-quote" : "Get Rates"}
                 </button>
