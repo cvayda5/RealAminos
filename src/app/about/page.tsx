@@ -6,29 +6,27 @@ export default function AboutPage() {
       <div style={{ paddingTop: 36 }}>
         <div className="lab-hero">
           <div>
-            <h2>Built by a Firefighter and His Son. Run Like a Family.</h2>
+            <h2>Founded on a Simple Problem: Nobody Could Find a Source They Could Trust.</h2>
             <p>
-              RealAminos was founded by Colton and Brian Vayda — a father-and-son team based in
-              Surprise, Arizona. Brian is a career firefighter, and together they started
-              RealAminos to bring the same standards he holds himself to on the job —
-              discipline, accountability, and zero shortcuts — to the research peptide industry.
+              RealAminos was founded by Colton Vayda, based in Surprise, Arizona. After years
+              spent around the research peptide space — buying, researching, and dealing with
+              the same sourcing headaches everyone else runs into — Colton kept hitting the same
+              wall: it was nearly impossible to find a supplier that was actually reliable.
+              RealAminos exists to fix that, with rigorous third-party testing, straightforward
+              policies, and a company that actually answers when you reach out.
             </p>
           </div>
-          <div className="hero-card">
-            <h3>Founders</h3>
-            <div className="coa-row">
-              <span>Brian Vayda</span>
-              <b>Co-Founder, Firefighter</b>
-            </div>
-            <div className="coa-row">
+          <div className="founder-card">
+            <h3>Founder</h3>
+            <div className="founder-row">
               <span>Colton Vayda</span>
-              <b>Co-Founder</b>
+              <b>Founder</b>
             </div>
-            <div className="coa-row">
-              <span>Ownership</span>
-              <b>Firefighter-Owned</b>
+            <div className="founder-row">
+              <span>Background</span>
+              <b>Years in the Peptide Space</b>
             </div>
-            <div className="coa-row">
+            <div className="founder-row">
               <span>Based In</span>
               <b>Surprise, AZ</b>
             </div>
@@ -42,14 +40,14 @@ export default function AboutPage() {
         </div>
         <div className="trust-grid" style={{ marginBottom: 60 }}>
           <div className="trust-card">
-            <div className="ic">F</div>
-            <h4>Firefighter-Owned & Operated</h4>
-            <p>Co-founder Brian is a career firefighter, and the same integrity and attention to detail he brings to the job guides every decision we make.</p>
+            <div className="ic">Y</div>
+            <h4>Years in the Peptide Space</h4>
+            <p>Founder Colton has spent years around research peptides, and knows firsthand where most sources fall short — that experience shapes every part of how RealAminos runs.</p>
           </div>
           <div className="trust-card">
-            <div className="ic">V</div>
-            <h4>Father & Son, Built Together</h4>
-            <p>Brian and Colton founded RealAminos together, and we run it the same way — hands-on and personally invested in every order.</p>
+            <div className="ic">P</div>
+            <h4>Built to Solve a Real Problem</h4>
+            <p>RealAminos exists because reliable sourcing was too hard to find. Every policy and process here is built around fixing that, not just selling product.</p>
           </div>
           <div className="trust-card">
             <div className="ic">A</div>
@@ -67,15 +65,15 @@ export default function AboutPage() {
           <h3>Our Story</h3>
           <p>
             RealAminos started with a simple frustration: an industry full of research peptide
-            sellers, but very few you could actually trust. As a career firefighter, Brian is
-            used to operating under strict protocols where attention to detail isn&apos;t
-            optional — it protects people. He and Colton saw an opportunity to bring that same
-            mindset to research compounds: rigorous third-party testing, straightforward
-            policies, and a company that actually answers when you reach out.
+            sellers, but very few you could actually trust. After years spent around the space —
+            sourcing, researching, and running into the same reliability problems everyone else
+            deals with — Colton saw an opportunity to build something different: rigorous
+            third-party testing, straightforward policies, and a company that actually answers
+            when you reach out.
           </p>
           <p>
-            We&apos;re still early — RealAminos is a small, family-run operation based out of
-            Surprise, Arizona — but we&apos;re building for the long run. That means real lab
+            We&apos;re still early — RealAminos is a small, independently-run operation based out
+            of Surprise, Arizona — but we&apos;re building for the long run. That means real lab
             testing on every batch, honest answers about what Research Use Only actually means,
             and eventually, physical locations here in Arizona where researchers can walk in,
             sign a waiver, and walk out with what they came for.

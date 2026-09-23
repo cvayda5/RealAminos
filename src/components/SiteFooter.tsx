@@ -17,7 +17,7 @@ export default function SiteFooter() {
             Independently tested. Research Use Only.
           </p>
           <p style={{ fontSize: 12.5, color: "#9aa5b1", lineHeight: 1.6, maxWidth: 280, marginTop: 10 }}>
-            Firefighter-owned. Founded by a father &amp; son team.
+            Independently founded. Built on years in the peptide space.
           </p>
           <p style={{ fontSize: 12.5, color: "#9aa5b1", lineHeight: 1.6, maxWidth: 280, marginTop: 10 }}>
             Surprise, Arizona
