@@ -2,7 +2,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { ProductWithVariants } from "@/types/database";
 import ProductCard from "@/components/ProductCard";
-import LaunchCountdown from "@/components/LaunchCountdown";
 
 export default async function Home() {
   const supabase = createClient();
@@ -16,7 +15,6 @@ export default async function Home() {
 
   return (
     <>
-      <LaunchCountdown />
       <div className="hero">
         <div className="hero-inner">
           <div>
