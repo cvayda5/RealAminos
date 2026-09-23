@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { ShippingDetails } from "@/types/database";
 import { calculateShippingFee, FREE_SHIPPING_THRESHOLD } from "@/lib/shipping/rate";
 import ZellePaymentStatus from "@/components/ZellePaymentStatus";
+import ZelleNoteGuide from "@/components/ZelleNoteGuide";
 
 // Kept in sync by eye with ZELLE_DISCOUNT_RATE in
 // src/app/api/checkout/zelle/route.ts — this is display-only (the server
@@ -571,7 +572,7 @@ export default function CartDrawer() {
 
               <div
                 className={`payment-option ${paymentMethod === "zelle" ? "selected" : ""}`}
-                onClick={handleSelectZelle}
+                onClick={() => setPaymentMethod("zelle")}
                 style={{
                   border: `2px solid ${paymentMethod === "zelle" ? "var(--orange)" : "var(--line)"}`,
                   borderRadius: 10,
@@ -597,8 +598,9 @@ export default function CartDrawer() {
                     marginTop: 4,
                   }}
                 >
-                  {zelleLoading && <p style={{ margin: 0, fontSize: 13.5 }}>Creating your order…</p>}
-                  {zelleError && <p className="error" style={{ margin: 0 }}>{zelleError}</p>}
+                  {!zelleOrder && (
+                    <ZelleNoteGuide onContinue={handleSelectZelle} loading={zelleLoading} error={zelleError} />
+                  )}
                   {zelleOrder && (
                     <>
                       <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
