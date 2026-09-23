@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { ProductWithVariants } from "@/types/database";
 import ProductCard from "@/components/ProductCard";
+import LaunchCountdown from "@/components/LaunchCountdown";
 
 export default async function Home() {
   const supabase = createClient();
@@ -15,6 +16,7 @@ export default async function Home() {
 
   return (
     <>
+      <LaunchCountdown />
       <div className="hero">
         <div className="hero-inner">
           <div>
@@ -50,33 +52,6 @@ export default async function Home() {
                 <b>3rd-Party</b>
                 <span>Independent lab testing</span>
               </div>
-            </div>
-          </div>
-          <div className="hero-card">
-            <h3>Sample Certificate of Analysis</h3>
-            <div className="coa-row">
-              <span>Compound</span>
-              <b>BPC-157</b>
-            </div>
-            <div className="coa-row">
-              <span>Lot No.</span>
-              <b>RA-24081</b>
-            </div>
-            <div className="coa-row">
-              <span>Purity (HPLC)</span>
-              <b>99.4%</b>
-            </div>
-            <div className="coa-row">
-              <span>Identity (MS)</span>
-              <b>Confirmed</b>
-            </div>
-            <div className="coa-row">
-              <span>Endotoxin</span>
-              <b>Pass</b>
-            </div>
-            <div className="coa-row">
-              <span>Status</span>
-              <b style={{ color: "#4ade80" }}>Released</b>
             </div>
           </div>
         </div>
