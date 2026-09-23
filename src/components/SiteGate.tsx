@@ -12,6 +12,25 @@ import { useEffect, useState } from "react";
 // for the life of the browser.
 const STORAGE_KEY = "realaminos_gate_accepted_v1";
 
+// Four separate, individually-required statements instead of one combined
+// checkbox — each is its own row so a researcher has to actually engage
+// with every claim being made (age, research-only use, who they're buying
+// for, and the legal terms) rather than one general "I agree to
+// everything" checkbox that's easy to click without reading any of it.
+interface GateChecks {
+  age: boolean;
+  researchOnly: boolean;
+  businessPurpose: boolean;
+  terms: boolean;
+}
+
+const EMPTY_CHECKS: GateChecks = {
+  age: false,
+  researchOnly: false,
+  businessPurpose: false,
+  terms: false,
+};
+
 export default function SiteGate() {
   // "ready" stays false for one tick while we check sessionStorage (which
   // only exists in the browser, not during server rendering) — this avoids
@@ -19,12 +38,16 @@ export default function SiteGate() {
   // accepted this session.
   const [ready, setReady] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [checked, setChecked] = useState(false);
+  const [checks, setChecks] = useState<GateChecks>(EMPTY_CHECKS);
 
   useEffect(() => {
     setDismissed(window.sessionStorage.getItem(STORAGE_KEY) === "1");
     setReady(true);
   }, []);
+
+  function toggle(key: keyof GateChecks) {
+    setChecks((c) => ({ ...c, [key]: !c[key] }));
+  }
 
   function handleEnter() {
     window.sessionStorage.setItem(STORAGE_KEY, "1");
@@ -33,49 +56,73 @@ export default function SiteGate() {
 
   if (!ready || dismissed) return null;
 
+  const allChecked = checks.age && checks.researchOnly && checks.businessPurpose && checks.terms;
+
   return (
     <div className="gate">
+      <div className="gate-wordmark">
+        real<span>aminos</span>
+      </div>
+
       <div className="gate-card">
-        <div className="mark">ra</div>
-        <h2>Restricted Research Access</h2>
+        <div className="gate-eyebrow">RealAminos</div>
+        <h2>Research-grade peptide supplier</h2>
         <p>
-          <strong>RealAminos</strong> supplies peptide and small-molecule research compounds
-          exclusively to qualified researchers, laboratories, and institutions for in-vitro
-          laboratory research. These products are{" "}
-          <strong>not drugs, foods, dietary supplements, or cosmetics</strong>, and are not
-          approved by the FDA or any regulatory body for use in humans or animals.
+          Materials on this site are for laboratory research use only — not for human,
+          therapeutic, or consumer use. Please confirm each statement to continue.
         </p>
-        <ul>
-          <li>You are at least 21 years of age.</li>
-          <li>
-            You are purchasing solely for laboratory research purposes — not for personal,
-            clinical, veterinary, cosmetic, or any other use.
-          </li>
-          <li>
-            You understand these compounds have not been evaluated for safety or efficacy in
-            humans or animals, and are not intended to diagnose, treat, cure, or prevent any
-            disease.
-          </li>
-        </ul>
-        <div className="gate-agree">
-          <input type="checkbox" id="gateCheck" checked={checked} onChange={(e) => setChecked(e.target.checked)} />
-          <label htmlFor="gateCheck">
-            I have read, understood, and agree to the{" "}
-            <a href="/legal" style={{ color: "var(--orange-dark)", fontWeight: 700 }}>
-              Research Use Only Terms &amp; Purchaser Agreement
-            </a>
-            , and I confirm the statements above are true.
+
+        <div className="gate-check-list">
+          <label className={`gate-check-item ${checks.age ? "is-checked" : ""}`}>
+            <input type="checkbox" checked={checks.age} onChange={() => toggle("age")} />
+            <span>
+              I am <strong>21 years of age or older</strong>
+            </span>
+          </label>
+
+          <label className={`gate-check-item ${checks.researchOnly ? "is-checked" : ""}`}>
+            <input type="checkbox" checked={checks.researchOnly} onChange={() => toggle("researchOnly")} />
+            <span>
+              I am accessing this site for <strong>laboratory research purposes only</strong> —
+              not for human use
+            </span>
+          </label>
+
+          <label className={`gate-check-item ${checks.businessPurpose ? "is-checked" : ""}`}>
+            <input
+              type="checkbox"
+              checked={checks.businessPurpose}
+              onChange={() => toggle("businessPurpose")}
+            />
+            <span>
+              I am acting for a <strong>business, laboratory, or institutional research
+              purpose</strong>
+            </span>
+          </label>
+
+          <label className={`gate-check-item ${checks.terms ? "is-checked" : ""}`}>
+            <input type="checkbox" checked={checks.terms} onChange={() => toggle("terms")} />
+            <span>
+              I agree to the <a href="/legal">RUO Purchaser Agreement</a>
+            </span>
           </label>
         </div>
-        <div className="gate-actions">
-          <button className="btn" disabled={!checked} onClick={handleEnter}>
-            Enter Site
-          </button>
-          <button className="btn-outline" onClick={() => (window.location.href = "https://www.google.com")}>
-            Leave Site
-          </button>
-        </div>
+
+        <button className="btn gate-enter" disabled={!allChecked} onClick={handleEnter}>
+          Enter
+        </button>
+
+        <p className="gate-disclaimer">
+          By selecting Enter you confirm the statements above are true and agree to the RUO
+          Purchaser Agreement. Materials are not for human or animal use, not for use in
+          diagnostic or therapeutic procedures, and have not been evaluated by the U.S. Food and
+          Drug Administration.
+        </p>
       </div>
+
+      <button className="gate-leave" onClick={() => (window.location.href = "https://www.google.com")}>
+        Not here for research? <span>Leave</span>
+      </button>
     </div>
   );
 }

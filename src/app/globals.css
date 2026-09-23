@@ -38,6 +38,52 @@ input,select{ width:100%; padding:10px 12px; border:1.5px solid var(--line); bor
 .promo-banner-text strong{ font-weight:800; }
 .promo-banner-close{ background:none; border:none; color:white; font-size:20px; line-height:1; opacity:.85; padding:2px 6px; flex-shrink:0; }
 .promo-banner-close:hover{ opacity:1; }
+
+.launch-countdown{
+  background:linear-gradient(135deg,var(--ink),var(--ink-2));
+  color:white;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+  padding:14px 24px;
+  text-align:center;
+  min-height:58px;
+}
+.launch-countdown-label{ font-size:13.5px; color:#d1d5db; }
+.launch-countdown-label strong{ color:var(--orange); font-weight:800; }
+.launch-countdown-units{ display:flex; align-items:center; gap:8px; }
+.launch-countdown-unit{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:8px;
+  padding:5px 10px;
+  min-width:46px;
+}
+.launch-countdown-num{ font-family:var(--mono); font-size:17px; font-weight:800; line-height:1.1; color:white; }
+.launch-countdown-unit-label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.06em; color:#9ca3af; margin-top:1px; }
+.launch-countdown-live{ background:linear-gradient(135deg,var(--orange),var(--orange-dark)); }
+.launch-countdown-live-text{ font-size:14px; font-weight:600; }
+.launch-countdown-live-text strong{ font-weight:800; }
+.launch-countdown-cta{
+  background:white;
+  color:var(--orange-dark);
+  font-weight:800;
+  font-size:13px;
+  padding:7px 16px;
+  border-radius:999px;
+  white-space:nowrap;
+}
+@media (max-width:640px){
+  .launch-countdown{ padding:12px 16px; gap:10px; }
+  .launch-countdown-label{ font-size:12px; width:100%; }
+  .launch-countdown-unit{ min-width:40px; padding:4px 8px; }
+  .launch-countdown-num{ font-size:15px; }
+}
 @media (max-width:640px){
   .promo-banner{ padding:9px 34px; font-size:12.5px; }
 }
@@ -267,16 +313,38 @@ footer.site{ background:var(--ink); color:#cbd5e1; padding:52px 24px 28px; margi
 .empty-cart{ text-align:center; color:var(--muted); font-size:13.5px; padding:60px 10px; }
 
 /* ---------- gate modal ---------- */
-.gate{ position:fixed; inset:0; background:#0b0f16; z-index:200; display:flex; align-items:center; justify-content:center; padding:20px; }
+/* flex-direction:column stacks the wordmark / card / leave-link; overflow-y
+   lets it scroll on a short phone screen instead of clipping the bottom of
+   the card behind the viewport edge (there are 4 checkboxes now, not 1). */
+/* justify-content:flex-start (not center) is deliberate — with 4 checkboxes
+   plus the disclaimer, this is often taller than a phone screen, and
+   center-aligning overflowing flex content clips it symmetrically off BOTH
+   the top and bottom edges with no obvious way to scroll up to it. Starting
+   from the top and letting it scroll like a normal page (which
+   overflow-y:auto still allows on the taller-than-viewport case) means the
+   wordmark is always the first thing visible, same as scrolling any page. */
+.gate{ position:fixed; inset:0; background:#0b0f16; z-index:200; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:22px; padding:48px 20px; overflow-y:auto; }
+.gate-wordmark{ font-size:30px; font-weight:800; letter-spacing:-0.02em; color:white; text-align:center; }
+.gate-wordmark span{ color:var(--orange); }
+
 .gate-card{ background:white; border-radius:18px; max-width:520px; width:100%; padding:36px 34px; position:relative; }
-.gate-card .mark{ width:44px; height:44px; border-radius:11px; background:linear-gradient(135deg,var(--orange),var(--orange-dark)); color:white; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:20px; margin-bottom:18px; }
-.gate-card h2{ font-size:21px; margin:0 0 12px; }
-.gate-card p{ font-size:13.5px; color:var(--ink-2); line-height:1.65; margin:0 0 14px; }
-.gate-card ul{ font-size:13.5px; color:var(--ink-2); line-height:1.7; padding-left:20px; margin:0 0 18px; }
-.gate-agree{ display:flex; gap:10px; align-items:flex-start; background:var(--paper-2); border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:18px; font-size:12.5px; color:var(--ink-2); }
-.gate-agree label{ font-weight:400; margin:0; }
-.gate-agree input{ margin-top:2px; width:auto; }
-.gate-actions{ display:flex; gap:10px; }
+.gate-eyebrow{ font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--orange-dark); margin-bottom:10px; }
+.gate-card h2{ font-size:23px; margin:0 0 12px; letter-spacing:-0.01em; }
+.gate-card p{ font-size:13.5px; color:var(--ink-2); line-height:1.65; margin:0 0 20px; }
+
+.gate-check-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+.gate-check-item{ display:flex; gap:12px; align-items:flex-start; background:var(--paper-2); border:1.5px solid var(--line); border-radius:12px; padding:14px 16px; font-size:13.5px; color:var(--ink-2); cursor:pointer; transition:.15s; }
+.gate-check-item:hover{ border-color:#fdba74; }
+.gate-check-item.is-checked{ background:var(--orange-light); border-color:#fdba74; color:var(--ink); }
+.gate-check-item input{ margin-top:3px; width:17px; height:17px; accent-color:var(--orange); flex-shrink:0; }
+.gate-check-item a{ color:var(--orange-dark); font-weight:700; text-decoration:underline; }
+.gate-check-item strong{ font-weight:700; }
+
+.gate-enter{ width:100%; }
+.gate-disclaimer{ font-size:11px; color:var(--muted); line-height:1.6; margin:14px 0 0; }
+
+.gate-leave{ background:none; border:none; color:#9ca3af; font-size:13px; cursor:pointer; padding:0; }
+.gate-leave span{ text-decoration:underline; color:white; font-weight:600; }
 
 /* ---------- toast ---------- */
 .toast{ position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:white; padding:12px 20px; border-radius:9px; font-size:13.5px; font-weight:600; opacity:0; transition:.25s; z-index:150; pointer-events:none; }
@@ -362,6 +430,14 @@ table.admin-table tr:last-child td{ border-bottom:none; }
 .report-stat-value{ font-size:28px; font-weight:800; color:var(--ink); }
 .admin-save{ background:var(--ink); color:white; border:none; border-radius:7px; padding:6px 10px; font-size:12px; font-weight:700; margin-top:6px; cursor:pointer; }
 .admin-save:hover{ background:var(--orange-dark); }
+.admin-save:disabled{ opacity:.55; cursor:default; }
+
+.label-bought{ background:var(--orange-light); border:1px solid #fdba74; border-radius:8px; padding:8px 10px; font-size:12px; margin-bottom:8px; }
+.label-bought a{ color:var(--orange-dark); font-weight:700; text-decoration:underline; }
+.label-buy-widget{ min-width:220px; }
+.label-rate-list{ display:flex; flex-direction:column; gap:5px; margin-top:8px; padding:8px; background:var(--paper-2); border:1px solid var(--line); border-radius:8px; }
+.label-rate-option{ display:flex; align-items:flex-start; gap:6px; font-size:12px; cursor:pointer; }
+.label-rate-option input{ margin-top:2px; }
 
 /* ---------- responsive: tablet / phone ---------- */
 /* Every rule below is also duplicated, unconditionally, under
