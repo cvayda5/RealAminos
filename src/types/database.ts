@@ -122,6 +122,16 @@ export interface Order {
   // self-reported payment hasn't actually been checked against real Zelle
   // activity yet. See src/lib/orders/finalizeZellePayment.ts.
   zelle_marked_paid_by: "customer" | "staff" | null;
+  // Set together, only once a Shippo label has actually been purchased for
+  // this order — see 0022_shipping_labels.sql and src/lib/shipping/shippo.ts.
+  // All null/0 for any order that either predates this column or was shipped
+  // some other way (a manually-typed tracking number still works fine and
+  // doesn't require these to be set).
+  shipping_carrier: string | null;
+  shipping_service: string | null;
+  label_url: string | null;
+  label_purchased_at: string | null;
+  package_weight_oz: number | null;
 }
 
 // A single row in a customer's points ledger — see 0007_points.sql and
