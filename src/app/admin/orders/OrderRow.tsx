@@ -4,6 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { OrderStatus, OrderWithItems } from "@/types/database";
 
+// Mirrors ShippingRate in src/lib/shipping/shippo.ts — kept as a separate,
+// plain type here since that module is server-only (reads SHIPPO_API_KEY)
+// and shouldn't be imported into a Client Component's bundle.
+interface ShippingRateOption {
+  objectId: string;
+  amount: string;
+  currency: string;
+  provider: string;
+  serviceLevelName: string;
+  estimatedDays: number | null;
+}
+
 export default function OrderRow({ order }: { order: OrderWithItems }) {
   const router = useRouter();
   const [status, setStatus] = useState<OrderStatus>(order.status);
@@ -11,6 +23,63 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
   const [saving, setSaving] = useState(false);
   const [markingPaid, setMarkingPaid] = useState(false);
   const [markPaidError, setMarkPaidError] = useState<string | null>(null);
+
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const [weightOz, setWeightOz] = useState("4");
+  const [rates, setRates] = useState<ShippingRateOption[] | null>(null);
+  const [selectedRateId, setSelectedRateId] = useState<string | null>(null);
+  const [gettingRates, setGettingRates] = useState(false);
+  const [buyingLabel, setBuyingLabel] = useState(false);
+  const [labelError, setLabelError] = useState<string | null>(null);
+
+  async function getRates() {
+    setGettingRates(true);
+    setLabelError(null);
+    setRates(null);
+    setSelectedRateId(null);
+    const res = await fetch(`/api/admin/orders/${order.id}/shipping-rates`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ weightOz: Number(weightOz) }),
+    });
+    const body = await res.json().catch(() => ({}));
+    setGettingRates(false);
+    if (!res.ok) {
+      setLabelError(body.error ?? "Couldn't get rates.");
+      return;
+    }
+    setRates(body.rates);
+    if (body.rates?.[0]) setSelectedRateId(body.rates[0].objectId);
+  }
+
+  async function buyLabel() {
+    const rate = rates?.find((r) => r.objectId === selectedRateId);
+    if (!rate) return;
+    setBuyingLabel(true);
+    setLabelError(null);
+    const res = await fetch(`/api/admin/orders/${order.id}/buy-label`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        rateObjectId: rate.objectId,
+        carrier: rate.provider,
+        serviceLevelName: rate.serviceLevelName,
+        weightOz: Number(weightOz),
+      }),
+    });
+    const body = await res.json().catch(() => ({}));
+    setBuyingLabel(false);
+    if (!res.ok) {
+      setLabelError(body.error ?? "Couldn't buy this label.");
+      return;
+    }
+    setRates(null);
+    if (body.labelUrl) window.open(body.labelUrl, "_blank");
+    router.refresh();
+  }
 
   async function save() {
     setSaving(true);
@@ -20,6 +89,19 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
       body: JSON.stringify({ status, trackingNumber: tracking }),
     });
     setSaving(false);
+    router.refresh();
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    setDeleteError(null);
+    const res = await fetch(`/api/admin/orders/${order.id}`, { method: "DELETE" });
+    const body = await res.json().catch(() => ({}));
+    setDeleting(false);
+    if (!res.ok) {
+      setDeleteError(body.error ?? "Couldn't delete this order.");
+      return;
+    }
     router.refresh();
   }
 
@@ -134,17 +216,119 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
           <span style={{ color: "var(--muted)", fontSize: 12 }}>— awaiting payment —</span>
         ) : (
           <>
-            <input
-              className="admin-track-input"
-              value={tracking}
-              onChange={(e) => setTracking(e.target.value)}
-              placeholder="1Z..."
-            />
-            <button className="admin-save" onClick={save} disabled={saving}>
-              {saving ? "Saving…" : "Save"}
-            </button>
+            {order.label_url && (
+              <div className="label-bought">
+                <div>
+                  <strong>{order.shipping_carrier}</strong> {order.shipping_service}
+                </div>
+                <a href={order.label_url} target="_blank" rel="noreferrer">
+                  View / print label →
+                </a>
+              </div>
+            )}
+
+            <div className="label-buy-widget">
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <input
+                  className="admin-track-input"
+                  style={{ width: 56 }}
+                  value={weightOz}
+                  onChange={(e) => setWeightOz(e.target.value)}
+                  placeholder="oz"
+                  title="Package weight, in ounces"
+                />
+                <span style={{ fontSize: 11, color: "var(--muted)" }}>oz</span>
+                <button className="admin-save" onClick={getRates} disabled={gettingRates} style={{ marginTop: 0 }}>
+                  {gettingRates ? "Getting Rates…" : order.label_url ? "Re-quote" : "Get Rates"}
+                </button>
+              </div>
+
+              {rates && rates.length > 0 && (
+                <div className="label-rate-list">
+                  {rates.map((r) => (
+                    <label key={r.objectId} className="label-rate-option">
+                      <input
+                        type="radio"
+                        name={`rate-${order.id}`}
+                        checked={selectedRateId === r.objectId}
+                        onChange={() => setSelectedRateId(r.objectId)}
+                      />
+                      <span>
+                        <strong>${parseFloat(r.amount).toFixed(2)}</strong> — {r.provider}{" "}
+                        {r.serviceLevelName}
+                        {r.estimatedDays ? ` (~${r.estimatedDays}d)` : ""}
+                      </span>
+                    </label>
+                  ))}
+                  <button
+                    className="admin-save"
+                    onClick={buyLabel}
+                    disabled={buyingLabel || !selectedRateId}
+                  >
+                    {buyingLabel ? "Buying…" : "Buy Label"}
+                  </button>
+                </div>
+              )}
+
+              {rates && rates.length === 0 && (
+                <p style={{ fontSize: 11, color: "var(--muted)", margin: "4px 0 0" }}>
+                  No rates came back — check the ship-from address is set up correctly.
+                </p>
+              )}
+
+              {labelError && <p className="error" style={{ fontSize: 11, marginTop: 4 }}>{labelError}</p>}
+            </div>
+
+            <div style={{ marginTop: 8 }}>
+              <input
+                className="admin-track-input"
+                value={tracking}
+                onChange={(e) => setTracking(e.target.value)}
+                placeholder="1Z... (manual override)"
+              />
+              <button className="admin-save" onClick={save} disabled={saving}>
+                {saving ? "Saving…" : "Save"}
+              </button>
+            </div>
           </>
         )}
+      </td>
+      <td>
+        {!confirmingDelete ? (
+          <button
+            className="btn-outline"
+            style={{ fontSize: 11.5, padding: "6px 10px", borderColor: "#b91c1c", color: "#b91c1c" }}
+            onClick={() => setConfirmingDelete(true)}
+          >
+            Delete
+          </button>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, maxWidth: 150 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: "#b91c1c" }}>
+              Delete {order.order_number}? Can&apos;t be undone — stock and any purchased label
+              aren&apos;t reversed.
+            </span>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button
+                className="admin-save"
+                style={{ background: "#b91c1c", marginTop: 0 }}
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? "Deleting…" : "Yes, delete"}
+              </button>
+              <button
+                className="btn-outline"
+                style={{ fontSize: 11.5, padding: "6px 10px" }}
+                onClick={() => setConfirmingDelete(false)}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+        {deleteError && <p className="error" style={{ fontSize: 11, marginTop: 4 }}>{deleteError}</p>}
       </td>
     </tr>
   );

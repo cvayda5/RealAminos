@@ -91,6 +91,7 @@ export default async function AdminOrdersPage() {
                 <th>Total</th>
                 <th>Status</th>
                 <th>Tracking #</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
