@@ -157,7 +157,14 @@ export async function purchaseLabel(rateObjectId: string): Promise<PurchasedLabe
     headers: authHeaders(),
     body: JSON.stringify({
       rate: rateObjectId,
-      label_file_type: "PDF",
+      // "PDF" (Shippo's bare default) renders the label centered on a
+      // full US-Letter page — fine for a laser/inkjet printer, wrong for a
+      // 4x6 thermal label printer. PDF_4x6 sizes the PDF itself to a 4x6
+      // page, which is what a thermal printer expects. This is set per
+      // API call, so a label-size preference changed on Shippo's own
+      // dashboard has no effect here — this is the only place that
+      // matters for labels bought through the site.
+      label_file_type: "PDF_4x6",
       async: false,
     }),
   });
