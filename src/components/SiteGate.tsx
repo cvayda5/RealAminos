@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 // Remembered for the current browser session (sessionStorage) rather than
 // forever (localStorage would survive closing the browser entirely). That's
@@ -39,6 +40,7 @@ export default function SiteGate() {
   const [ready, setReady] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [checks, setChecks] = useState<GateChecks>(EMPTY_CHECKS);
+  const pathname = usePathname();
 
   useEffect(() => {
     setDismissed(window.sessionStorage.getItem(STORAGE_KEY) === "1");
@@ -53,6 +55,13 @@ export default function SiteGate() {
     window.sessionStorage.setItem(STORAGE_KEY, "1");
     setDismissed(true);
   }
+
+  // /support is meant to be reachable with zero friction — someone landing
+  // there is usually already stuck on a problem (a bad order, a payment
+  // question), often from a link in an email or a DM, and shouldn't have to
+  // click through the research-use gate just to find how to reach us. Every
+  // other page keeps the gate as normal.
+  if (pathname?.startsWith("/support")) return null;
 
   if (!ready || dismissed) return null;
 
