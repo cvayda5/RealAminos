@@ -10,6 +10,15 @@ import PromoBanner from "@/components/PromoBanner";
 export const metadata = {
   title: "RealAminos — Research Compounds",
   description: "High-purity peptide and small-molecule research compounds. Research Use Only.",
+  // Google Search Console / Merchant Center site-ownership verification —
+  // Next.js's `verification.google` field renders this as
+  // <meta name="google-site-verification" content="..." /> in <head>, which
+  // is exactly what Google's "HTML tag" verification method asks for. Don't
+  // remove this once verification succeeds — Google keeps checking for it
+  // to confirm continued ownership.
+  verification: {
+    google: "vsZWh8tQYtTxasYo6Ds0EHsM6YaGurBwnrm4TW9cEes",
+  },
 };
 
 // viewportFit: "cover" is what lets env(safe-area-inset-bottom) resolve to a
