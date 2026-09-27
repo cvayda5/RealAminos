@@ -1,15 +1,33 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { ProductWithVariants } from "@/types/database";
 import ProductCard from "@/components/ProductCard";
 
 // Server Component: reads the real product catalog straight from Postgres.
-// Anyone can view this (products_select_all / product_variants_select_all
-// policies allow public read) — no login required just to browse.
+// As of the account-gate change below, browsing the catalog at all now
+// requires a logged-in account — anonymous visitors are bounced to /login
+// before any product data (name, price, image) is ever fetched or
+// rendered. This deliberately also applies to individual /shop/[id] pages
+// that Google Shopping/Ads link to directly, which means those ads will
+// very likely get disapproved (or flagged for a landing page that doesn't
+// match what the shopper actually sees) until that's paused or reworked —
+// known and accepted tradeoff, not a bug.
 // Category filtering happens via a URL query param (?category=...) so the
 // whole page stays server-rendered — no client JS needed just to filter.
 export default async function ShopPage({ searchParams }: { searchParams: { category?: string } }) {
   const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    const next = searchParams.category
+      ? `/shop?category=${encodeURIComponent(searchParams.category)}`
+      : "/shop";
+    redirect(`/login?next=${encodeURIComponent(next)}`);
+  }
+
   const activeCategory = searchParams.category ?? null;
 
   const { data: products, error } = await supabase
