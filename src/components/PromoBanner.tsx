@@ -1,13 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isSiteSaleActive, SITE_SALE } from "@/lib/promotions/siteSale";
 
 // Same reasoning as SiteGate: sessionStorage (not localStorage) so
 // dismissing it covers the rest of that visit without needing to
 // re-dismiss on every page, but a genuinely new visit shows it again —
 // which is what you want for a promo banner (it should keep announcing
 // itself to new visitors even after a returning one closed it once).
-const STORAGE_KEY = "realaminos_promo_beta20_dismissed";
+// Storage key is versioned to this specific sale (not the old BETA20 one)
+// so a customer who dismissed the old banner months ago still sees this one.
+const STORAGE_KEY = "realaminos_promo_sitewide20_dismissed";
+
+function formatEndDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric" });
+}
 
 export default function PromoBanner() {
   // Stays false for one tick while sessionStorage is checked client-side —
@@ -26,13 +33,16 @@ export default function PromoBanner() {
     setDismissed(true);
   }
 
-  if (!ready || dismissed) return null;
+  // Reads the same SITE_SALE config every price on the site reads from
+  // (see src/lib/promotions/siteSale.ts) — this banner disappears on its
+  // own once `endsAt` passes, no separate step needed to take it down.
+  if (!isSiteSaleActive() || !ready || dismissed) return null;
 
   return (
     <div className="promo-banner">
       <span className="promo-banner-text">
-        <strong>20% OFF</strong> for our Beta Launch — use code <strong>BETA20</strong> at
-        checkout
+        <strong>Site-Wide Sale</strong> — prices are discounted storewide through{" "}
+        {formatEndDate(SITE_SALE.endsAt)}, no code needed
       </span>
       <button
         type="button"

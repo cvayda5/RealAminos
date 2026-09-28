@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCart } from "@/lib/cart/CartContext";
 import type { ProductWithVariants } from "@/types/database";
+import { getSitePriceDisplay } from "@/lib/promotions/siteSale";
 
 export default function AddToCartBox({ product }: { product: ProductWithVariants }) {
   const { addItem } = useCart();
@@ -39,6 +40,7 @@ export default function AddToCartBox({ product }: { product: ProductWithVariants
         <div className="size-grid">
           {product.product_variants.map((v, i) => {
             const unavailable = v.stock <= 0;
+            const priceInfo = getSitePriceDisplay(v.price);
             return (
               <div
                 key={v.id}
@@ -46,7 +48,19 @@ export default function AddToCartBox({ product }: { product: ProductWithVariants
                 onClick={() => selectVariant(i)}
                 style={unavailable ? { opacity: 0.55 } : undefined}
               >
-                {v.size} — {unavailable ? "Out of Stock" : `$${v.price.toFixed(2)}`}
+                {v.size} —{" "}
+                {unavailable ? (
+                  "Out of Stock"
+                ) : priceInfo.active ? (
+                  <>
+                    <span style={{ textDecoration: "line-through", opacity: 0.6, marginRight: 3 }}>
+                      ${v.price.toFixed(2)}
+                    </span>
+                    <strong>${priceInfo.sale.toFixed(2)}</strong>
+                  </>
+                ) : (
+                  `$${v.price.toFixed(2)}`
+                )}
               </div>
             );
           })}
@@ -54,7 +68,17 @@ export default function AddToCartBox({ product }: { product: ProductWithVariants
       </div>
 
       <div className="pd-price">
-        ${variant ? variant.price.toFixed(2) : "0.00"} <span>per unit, excl. shipping</span>
+        {variant && getSitePriceDisplay(variant.price).active ? (
+          <>
+            <span style={{ textDecoration: "line-through", color: "var(--muted)", fontSize: 16, marginRight: 8 }}>
+              ${variant.price.toFixed(2)}
+            </span>
+            <span style={{ color: "#059669" }}>${getSitePriceDisplay(variant.price).sale.toFixed(2)}</span>
+          </>
+        ) : (
+          `$${variant ? variant.price.toFixed(2) : "0.00"}`
+        )}{" "}
+        <span>per unit, excl. shipping</span>
       </div>
 
       {outOfStock ? (

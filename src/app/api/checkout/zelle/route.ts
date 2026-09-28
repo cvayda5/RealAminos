@@ -4,6 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { NewOrderPayload, PointTransaction } from "@/types/database";
 import { calculateShippingFee } from "@/lib/shipping/rate";
 import { resolveVariant } from "@/lib/inventory/resolveVariant";
+import { resolveDiscount } from "@/lib/checkout/resolveDiscount";
+import { resolveEffectivePrice } from "@/lib/promotions/siteSale";
 import { sendAdminOrderNotification } from "@/lib/email/sendAdminOrderNotification";
 
 // 5% off for choosing Zelle over a card — in exchange for us not getting
@@ -61,6 +63,12 @@ export async function POST(request: Request) {
   // line's real product_id here so the order_items insert below doesn't
   // have to re-query for it.
   const resolvedProductIdByLine = new Map<string, string>();
+  // Real, current unit price per line, read straight from the database —
+  // never trusted from whatever price the client happened to send.
+  // resolveEffectivePrice() applies the site-wide sale if one's running
+  // (src/lib/promotions/siteSale.ts) to that real price, so what's charged
+  // always matches what the product page showed.
+  const realUnitPriceByLine = new Map<string, number>();
   for (const item of body.items) {
     const variant = await resolveVariant(admin, item);
     if (!variant) {
@@ -80,7 +88,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    resolvedProductIdByLine.set(item.pointTransactionId ?? `${item.productId}::${item.size}`, variant.product_id);
+    const lineKey = item.pointTransactionId ?? `${item.productId}::${item.size}`;
+    resolvedProductIdByLine.set(lineKey, variant.product_id);
+    realUnitPriceByLine.set(lineKey, resolveEffectivePrice(variant.price));
   }
 
   const rewardTxIds = [...new Set(body.items.map((i) => i.pointTransactionId).filter(Boolean))] as string[];
@@ -109,34 +119,32 @@ export async function POST(request: Request) {
     }
   }
 
-  const normalizedItems = body.items.map((i) => ({
-    ...i,
-    unitPrice: i.pointTransactionId ? 0 : i.unitPrice,
-  }));
+  const normalizedItems = body.items.map((i) => {
+    if (i.pointTransactionId) return { ...i, unitPrice: 0 };
+    const lineKey = i.pointTransactionId ?? `${i.productId}::${i.size}`;
+    return { ...i, unitPrice: realUnitPriceByLine.get(lineKey) ?? i.unitPrice };
+  });
 
   const subtotal = normalizedItems.reduce((sum, i) => sum + i.unitPrice * i.qty, 0);
   const pointsRedeemedTotal = [...reservationById.values()].reduce((sum, r) => sum + Math.abs(r.points), 0);
   const shippingFee = calculateShippingFee(subtotal, shipping.state);
 
-  let discountCode: string | null = null;
-  let discountPercent = 0;
-  const requestedCode = body.discountCode?.trim().toUpperCase();
-  if (requestedCode) {
-    const { data: found } = await admin
-      .from("discount_codes")
-      .select("code, percent_off")
-      .ilike("code", requestedCode)
-      .eq("is_active", true)
-      .maybeSingle();
-
-    if (!found) {
-      return NextResponse.json(
-        { error: "That discount code is no longer valid — remove it and try again." },
-        { status: 400 }
-      );
-    }
-    discountCode = found.code;
-    discountPercent = found.percent_off;
+  // A customer-typed discount code, if any, applies on top of the subtotal
+  // above — which already reflects the site-wide sale, if one's running,
+  // via the real per-line prices computed above. See resolveDiscount.ts;
+  // this is also what /api/checkout/whop uses, so both payment paths
+  // always land on the exact same total for the same cart.
+  let discountCode: string | null;
+  let discountPercent: number;
+  try {
+    const resolved = await resolveDiscount(admin, body.discountCode);
+    discountCode = resolved.code;
+    discountPercent = resolved.percent;
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "That discount code is no longer valid." },
+      { status: 400 }
+    );
   }
 
   const total = Math.round(subtotal * (1 - discountPercent / 100) * 100) / 100;

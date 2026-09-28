@@ -11,6 +11,11 @@ interface ResolvedVariant {
   stock: number;
   size: string;
   product_id: string;
+  // The real, current list price straight from the database — added so
+  // checkout can compute what a line actually costs (including the
+  // site-wide sale, see resolveEffectivePrice.ts) from this, never from
+  // whatever unitPrice the client happened to send.
+  price: number;
 }
 
 // A normal paid cart line carries the *product's* id plus a chosen size, so
@@ -29,7 +34,7 @@ export async function resolveVariant(
   if (item.pointTransactionId) {
     const { data } = await admin
       .from("product_variants")
-      .select("id, stock, size, product_id")
+      .select("id, stock, size, product_id, price")
       .eq("id", item.productId)
       .maybeSingle<ResolvedVariant>();
     return data;
@@ -37,7 +42,7 @@ export async function resolveVariant(
 
   const { data } = await admin
     .from("product_variants")
-    .select("id, stock, size, product_id")
+    .select("id, stock, size, product_id, price")
     .eq("product_id", item.productId)
     .eq("size", item.size)
     .maybeSingle<ResolvedVariant>();

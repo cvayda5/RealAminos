@@ -5,6 +5,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import SiteGate from "@/components/SiteGate";
 import CartDrawer from "@/components/CartDrawer";
+import PromoBanner from "@/components/PromoBanner";
 
 export const metadata = {
   title: "RealAminos — Research Compounds",
@@ -67,6 +68,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <CartProvider>
           <SiteGate isLoggedIn={!!user} />
+          <PromoBanner />
           <SiteHeader userEmail={user?.email ?? null} />
           {children}
           <SiteFooter />
