@@ -67,7 +67,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <CartProvider>
-          <SiteGate />
+          <SiteGate isLoggedIn={!!user} />
           <PromoBanner />
           <SiteHeader userEmail={user?.email ?? null} />
           {children}
