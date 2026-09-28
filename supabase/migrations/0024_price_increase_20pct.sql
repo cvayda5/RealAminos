@@ -1,0 +1,12 @@
+-- Straight 20% price increase across every product size (product_variants),
+-- no promo/strikethrough framing attached — this just raises the real
+-- price. Applies to every variant regardless of category or current stock
+-- level (in-stock and out-of-stock sizes both go up, so nothing is
+-- inconsistent whenever a currently-out-of-stock size comes back).
+--
+-- round(..., 2) keeps this a clean two-decimal dollar amount instead of
+-- something like 41.99 * 1.2 = 50.388 landing with a stray third decimal.
+-- Results won't all be tidy ".99" endings — e.g. $41.99 -> $50.39, $37.99
+-- -> $45.59 — if you want them re-touched to nicer psychological pricing
+-- afterward, that's a quick follow-up, just say so.
+update public.product_variants set price = round(price * 1.2, 2);
