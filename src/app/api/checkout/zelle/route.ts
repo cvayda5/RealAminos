@@ -5,7 +5,6 @@ import type { NewOrderPayload, PointTransaction } from "@/types/database";
 import { calculateShippingFee } from "@/lib/shipping/rate";
 import { resolveVariant } from "@/lib/inventory/resolveVariant";
 import { resolveDiscount } from "@/lib/checkout/resolveDiscount";
-import { resolveEffectivePrice } from "@/lib/promotions/siteSale";
 import { sendAdminOrderNotification } from "@/lib/email/sendAdminOrderNotification";
 
 // 5% off for choosing Zelle over a card — in exchange for us not getting
@@ -64,10 +63,11 @@ export async function POST(request: Request) {
   // have to re-query for it.
   const resolvedProductIdByLine = new Map<string, string>();
   // Real, current unit price per line, read straight from the database —
-  // never trusted from whatever price the client happened to send.
-  // resolveEffectivePrice() applies the site-wide sale if one's running
-  // (src/lib/promotions/siteSale.ts) to that real price, so what's charged
-  // always matches what the product page showed.
+  // never trusted from whatever price the client happened to send. This is
+  // just the variant's real stored price (see
+  // 0025_restore_original_prices.sql — any "was" price is display-only via
+  // compare_at_price and never affects what's actually charged), so what's
+  // charged always matches what the product page showed.
   const realUnitPriceByLine = new Map<string, number>();
   for (const item of body.items) {
     const variant = await resolveVariant(admin, item);
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     }
     const lineKey = item.pointTransactionId ?? `${item.productId}::${item.size}`;
     resolvedProductIdByLine.set(lineKey, variant.product_id);
-    realUnitPriceByLine.set(lineKey, resolveEffectivePrice(variant.price));
+    realUnitPriceByLine.set(lineKey, variant.price);
   }
 
   const rewardTxIds = [...new Set(body.items.map((i) => i.pointTransactionId).filter(Boolean))] as string[];

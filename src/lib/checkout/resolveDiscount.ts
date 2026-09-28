@@ -11,11 +11,10 @@ export interface ResolvedDiscount {
 // with a chance to drift.
 //
 // This only ever resolves a real, customer-typed code from discount_codes.
-// The site-wide sale (src/lib/promotions/siteSale.ts) is NOT handled here
-// — it's baked directly into each line's unit price before this even runs
-// (see resolveEffectivePrice(), used in both checkout routes), so a coupon
-// code applies on top of the already-sale-adjusted subtotal, the same way
-// a coupon would stack with a storewide sale at a normal retailer.
+// Any struck-through "was" pricing (src/lib/promotions/siteSale.ts,
+// compare_at_price) is purely a display thing and never affects the
+// subtotal a coupon code applies on top of here — the real charged price is
+// just each variant's stored `price`.
 export async function resolveDiscount(
   admin: SupabaseClient,
   requestedCode: string | undefined

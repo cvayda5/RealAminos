@@ -40,7 +40,7 @@ export default function AddToCartBox({ product }: { product: ProductWithVariants
         <div className="size-grid">
           {product.product_variants.map((v, i) => {
             const unavailable = v.stock <= 0;
-            const priceInfo = getSitePriceDisplay(v.price);
+            const priceInfo = getSitePriceDisplay(v);
             return (
               <div
                 key={v.id}
@@ -54,7 +54,7 @@ export default function AddToCartBox({ product }: { product: ProductWithVariants
                 ) : priceInfo.active ? (
                   <>
                     <span style={{ textDecoration: "line-through", opacity: 0.6, marginRight: 3 }}>
-                      ${v.price.toFixed(2)}
+                      ${priceInfo.original.toFixed(2)}
                     </span>
                     <strong>${priceInfo.sale.toFixed(2)}</strong>
                   </>
@@ -68,12 +68,12 @@ export default function AddToCartBox({ product }: { product: ProductWithVariants
       </div>
 
       <div className="pd-price">
-        {variant && getSitePriceDisplay(variant.price).active ? (
+        {variant && getSitePriceDisplay(variant).active ? (
           <>
             <span style={{ textDecoration: "line-through", color: "var(--muted)", fontSize: 16, marginRight: 8 }}>
-              ${variant.price.toFixed(2)}
+              ${getSitePriceDisplay(variant).original.toFixed(2)}
             </span>
-            <span style={{ color: "#059669" }}>${getSitePriceDisplay(variant.price).sale.toFixed(2)}</span>
+            <span style={{ color: "#059669" }}>${getSitePriceDisplay(variant).sale.toFixed(2)}</span>
           </>
         ) : (
           `$${variant ? variant.price.toFixed(2) : "0.00"}`

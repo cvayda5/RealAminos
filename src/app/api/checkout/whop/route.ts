@@ -6,7 +6,6 @@ import { calculateShippingFee } from "@/lib/shipping/rate";
 import { createWhopCheckout } from "@/lib/whop/client";
 import { resolveVariant } from "@/lib/inventory/resolveVariant";
 import { resolveDiscount } from "@/lib/checkout/resolveDiscount";
-import { resolveEffectivePrice } from "@/lib/promotions/siteSale";
 
 // POST /api/checkout/whop — validates the cart exactly the way /api/orders
 // does (same reservation checks, same server-side discount/shipping/price
@@ -62,10 +61,12 @@ export async function POST(request: Request) {
   // Real, current unit price per line — keyed the same way order_items
   // resolves a line back to its variant elsewhere in this codebase — read
   // straight from the database here, never trusted from whatever price the
-  // client happened to send. resolveEffectivePrice() applies the site-wide
-  // sale if one's running (src/lib/promotions/siteSale.ts) to that real
-  // price, so what's charged always matches what the product page showed,
-  // and nobody can pay less by tampering with a line's price client-side.
+  // client happened to send. This is just the variant's real stored price
+  // (see 0025_restore_original_prices.sql — any "was" price is display-only,
+  // struck-through pricing via compare_at_price, and never affects what's
+  // actually charged), so what's charged always matches what the product
+  // page showed, and nobody can pay less by tampering with a line's price
+  // client-side.
   const realUnitPriceByLine = new Map<string, number>();
   for (const item of body.items) {
     const variant = await resolveVariant(admin, item);
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
       );
     }
     const lineKey = item.pointTransactionId ?? `${item.productId}::${item.size}`;
-    realUnitPriceByLine.set(lineKey, resolveEffectivePrice(variant.price));
+    realUnitPriceByLine.set(lineKey, variant.price);
   }
 
   // Same reservation re-verification as before payment: still belongs to

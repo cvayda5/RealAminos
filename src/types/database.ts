@@ -46,6 +46,11 @@ export interface ProductVariant {
   product_id: string;
   size: string;
   price: number;
+  // Optional higher reference price to show struck through next to `price`
+  // — see 0025_restore_original_prices.sql. Null, or <= price, means there's
+  // nothing to show crossed out. Always an explicit stored value, never
+  // computed at runtime.
+  compare_at_price: number | null;
   sort_order: number;
   // Units on hand for this exact product+size. 0 means "out of stock —
   // coming soon" on the storefront — see /admin/inventory, where staff set

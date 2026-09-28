@@ -8,11 +8,13 @@ export default function ProductCard({ product }: { product: ProductWithVariants 
   // Price "from" the cheapest size that's actually buyable — falls back to
   // the cheapest size overall only when nothing at all is in stock, purely
   // so the card still shows a plausible number under the "Coming Soon" label.
-  const priceFrom = (inStock.length > 0 ? inStock : product.product_variants).reduce(
-    (min, v) => Math.min(min, v.price),
-    Infinity
-  );
-  const priceDisplay = getSitePriceDisplay(priceFrom);
+  // Picking the specific variant (not just the min price number) so its own
+  // compare_at_price travels with it — struck-through pricing always
+  // reflects the same size the active price is for.
+  const candidates = inStock.length > 0 ? inStock : product.product_variants;
+  const cheapestVariant = candidates.reduce((min, v) => (v.price < min.price ? v : min), candidates[0]);
+  const priceFrom = cheapestVariant?.price ?? Infinity;
+  const priceDisplay = getSitePriceDisplay(cheapestVariant ?? { price: priceFrom, compare_at_price: null });
 
   return (
     <div className="pcard">

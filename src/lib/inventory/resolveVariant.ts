@@ -11,10 +11,10 @@ interface ResolvedVariant {
   stock: number;
   size: string;
   product_id: string;
-  // The real, current list price straight from the database — added so
-  // checkout can compute what a line actually costs (including the
-  // site-wide sale, see resolveEffectivePrice.ts) from this, never from
-  // whatever unitPrice the client happened to send.
+  // The real, current price straight from the database — this is exactly
+  // what checkout charges per unit, never whatever unitPrice the client
+  // happened to send. Any struck-through "was" price (compare_at_price) is
+  // display-only and doesn't factor into this at all.
   price: number;
 }
 

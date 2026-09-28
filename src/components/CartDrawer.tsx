@@ -9,7 +9,6 @@ import type { ShippingDetails } from "@/types/database";
 import { calculateShippingFee, FREE_SHIPPING_THRESHOLD } from "@/lib/shipping/rate";
 import ZellePaymentStatus from "@/components/ZellePaymentStatus";
 import ZelleNoteGuide from "@/components/ZelleNoteGuide";
-import { isSiteSaleActive, getSitePriceDisplay } from "@/lib/promotions/siteSale";
 
 // Kept in sync by eye with ZELLE_DISCOUNT_RATE in
 // src/app/api/checkout/zelle/route.ts — this is display-only (the server
@@ -111,29 +110,24 @@ export default function CartDrawer() {
   const [discountError, setDiscountError] = useState<string | null>(null);
   const [applyingDiscount, setApplyingDiscount] = useState(false);
 
-  // Mirrors exactly what both checkout routes compute server-side
-  // (resolveEffectivePrice() in src/lib/promotions/siteSale.ts, applied
-  // per line) so this preview never disagrees with what's actually
-  // charged. `subtotal` (from useCart()) is the plain sum of list prices;
-  // `saleSubtotal` is what each line really costs right now, sale or no
-  // sale — a typed discount code then applies on top of that.
-  const siteSaleActive = isSiteSaleActive();
-  const saleSubtotal = items.reduce((sum, item) => {
-    if (item.isReward) return sum;
-    return sum + getSitePriceDisplay(item.unitPrice).sale * item.qty;
-  }, 0);
-  const siteSaleSavings = subtotal - saleSubtotal;
+  // `subtotal` (from useCart()) is the plain sum of each line's real unit
+  // price — that's also exactly what's charged (see
+  // 0025_restore_original_prices.sql — any "was" price is display-only,
+  // shown struck through on the product pages, and never affects the real
+  // price a line was added to the cart at). A typed discount code applies
+  // on top of that, mirroring exactly what both checkout routes compute
+  // server-side so this preview never disagrees with what's actually
+  // charged.
   const codePercent = appliedDiscount?.percentOff ?? 0;
-  const codeDiscountAmount = saleSubtotal * (codePercent / 100);
-  const total = saleSubtotal - codeDiscountAmount;
+  const codeDiscountAmount = subtotal * (codePercent / 100);
+  const total = subtotal - codeDiscountAmount;
 
-  // Free at $200+ of what's actually being charged (post-sale), otherwise a
-  // flat zone rate based on the shipping state — same function + same base
-  // amount the server uses in both checkout routes, so this preview always
-  // matches what actually gets charged. Only shown on the shipping step,
-  // since there's no state to estimate from yet on the
-  // cart step.
-  const shippingFee = calculateShippingFee(saleSubtotal, shipping.state);
+  // Free at $200+ of the real subtotal, otherwise a flat zone rate based on
+  // the shipping state — same function + same base amount the server uses
+  // in both checkout routes, so this preview always matches what actually
+  // gets charged. Only shown on the shipping step, since there's no state
+  // to estimate from yet on the cart step.
+  const shippingFee = calculateShippingFee(subtotal, shipping.state);
   const grandTotal = total + shippingFee;
 
   // A cart made entirely of points-redeemed rewards can't check out on its
@@ -398,12 +392,6 @@ export default function CartDrawer() {
                   <span>Subtotal</span>
                   <span>{money(subtotal)}</span>
                 </div>
-                {siteSaleActive && siteSaleSavings > 0 && (
-                  <div className="subtotal-row" style={{ color: "#059669" }}>
-                    <span>Discount</span>
-                    <span>-{money(siteSaleSavings)}</span>
-                  </div>
-                )}
                 {appliedDiscount && codeDiscountAmount > 0 && (
                   <div className="subtotal-row" style={{ color: "#059669" }}>
                     <span>Code {appliedDiscount.code}</span>
@@ -531,12 +519,6 @@ export default function CartDrawer() {
                 <span>Subtotal</span>
                 <span>{money(subtotal)}</span>
               </div>
-              {siteSaleActive && siteSaleSavings > 0 && (
-                <div className="subtotal-row" style={{ color: "#059669" }}>
-                  <span>Discount</span>
-                  <span>-{money(siteSaleSavings)}</span>
-                </div>
-              )}
               {appliedDiscount && codeDiscountAmount > 0 && (
                 <div className="subtotal-row" style={{ color: "#059669" }}>
                   <span>Code {appliedDiscount.code}</span>
