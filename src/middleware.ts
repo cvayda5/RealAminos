@@ -29,7 +29,20 @@ const PUBLIC_PATH_PREFIXES = [
 // own signature check (see verifyWhopWebhook) is what actually secures it.
 const PUBLIC_API_PREFIXES = ["/api/webhooks"];
 
+// Google's "upload an HTML file" site-verification method works by having
+// Google's OWN crawler (never logged in, no session cookie) fetch a file
+// like /google65c972793efaa8dc.html straight from the root and check its
+// contents. Same root cause as the meta-tag method failing earlier: any
+// unauthenticated request to a path not on this allowlist gets redirected
+// to /login by the check below, so Google's crawler was seeing the login
+// page instead of the actual file (or the actual homepage's meta tag).
+// Matches any /google<anything>.html at the root — covers this token and
+// any future one from a different Google property without another
+// middleware edit each time.
+const GOOGLE_VERIFICATION_FILE = /^\/google[a-z0-9_-]+\.html$/i;
+
 function isPublicPath(pathname: string): boolean {
+  if (GOOGLE_VERIFICATION_FILE.test(pathname)) return true;
   return [...PUBLIC_PATH_PREFIXES, ...PUBLIC_API_PREFIXES].some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
