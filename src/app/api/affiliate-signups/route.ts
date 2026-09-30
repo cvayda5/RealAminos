@@ -6,6 +6,7 @@ interface Body {
   lastName?: string;
   instagramHandle?: string;
   email?: string;
+  zelleInfo?: string;
   preferredCode?: string;
 }
 
@@ -26,9 +27,10 @@ export async function POST(request: Request) {
   const lastName = body.lastName?.trim();
   const instagramHandle = body.instagramHandle?.trim().replace(/^@+/, "");
   const email = body.email?.trim();
+  const zelleInfo = body.zelleInfo?.trim();
   const preferredCode = body.preferredCode?.trim().toUpperCase();
 
-  if (!firstName || !lastName || !instagramHandle || !email || !preferredCode) {
+  if (!firstName || !lastName || !instagramHandle || !email || !zelleInfo || !preferredCode) {
     return NextResponse.json({ error: "All fields are required." }, { status: 400 });
   }
   if (!/^\S+@\S+\.\S+$/.test(email)) {
@@ -47,6 +49,7 @@ export async function POST(request: Request) {
     last_name: lastName,
     instagram_handle: instagramHandle,
     email,
+    zelle_info: zelleInfo,
     preferred_code: preferredCode,
   });
 

@@ -9,6 +9,7 @@ export default function AffiliateSignupForm() {
   const [lastName, setLastName] = useState("");
   const [instagramHandle, setInstagramHandle] = useState("");
   const [email, setEmail] = useState("");
+  const [zelleInfo, setZelleInfo] = useState("");
   const [preferredCode, setPreferredCode] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +23,7 @@ export default function AffiliateSignupForm() {
     const res = await fetch("/api/affiliate-signups", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ firstName, lastName, instagramHandle, email, preferredCode }),
+      body: JSON.stringify({ firstName, lastName, instagramHandle, email, zelleInfo, preferredCode }),
     });
     const body = await res.json().catch(() => ({}));
 
@@ -83,6 +84,17 @@ export default function AffiliateSignupForm() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
+
+      <input
+        required
+        placeholder="Zelle Email or Phone Number (for payouts)"
+        value={zelleInfo}
+        onChange={(e) => setZelleInfo(e.target.value)}
+      />
+      <p style={{ fontSize: 11.5, color: "#9aa5b1", margin: "-6px 0 10px" }}>
+        This is how we&apos;ll pay your commission — whatever email or phone number your Zelle
+        account uses.
+      </p>
 
       <input
         required

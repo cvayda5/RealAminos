@@ -39,7 +39,9 @@ export default async function AdminAffiliateSignupsPage() {
   const admin = createAdminClient();
   const { data: signups, error } = await admin
     .from("affiliate_signups")
-    .select("id, first_name, last_name, instagram_handle, email, preferred_code, contacted, created_at")
+    .select(
+      "id, first_name, last_name, instagram_handle, email, zelle_info, preferred_code, contacted, created_at"
+    )
     .order("created_at", { ascending: false })
     .returns<AffiliateSignup[]>();
 
@@ -91,6 +93,7 @@ export default async function AdminAffiliateSignupsPage() {
                 <th>Name</th>
                 <th>Instagram</th>
                 <th>Email</th>
+                <th>Zelle (for payout)</th>
                 <th>Preferred Code</th>
                 <th>Submitted</th>
                 <th>Status</th>
