@@ -1,14 +1,18 @@
 // Keeps the Supabase auth session cookie fresh on every request, AND —
 // as of the sitewide account gate — is what actually enforces that gate.
-// Nothing on the site (the age/waiver popup, About, FAQ, RUO policy, /shop,
-// all of it) renders for a logged-out visitor, with one deliberate
-// exception: the homepage itself ("/" exactly — see isHomepage below),
-// opened up so Google's bots can verify site-ownership/ads tags. Every
-// other request without a real session gets bounced straight to /login
-// before any page code runs. This runs at the edge, ahead of every page
-// and layout, so it's the one place that actually can't be bypassed by a
-// popup dismissal or a direct link the way the old client-side SiteGate
+// Nothing on the site (marketing pages, the homepage, the age/waiver popup,
+// About, FAQ, RUO policy, /shop, all of it) renders for a logged-out
+// visitor — every request without a real session gets bounced straight to
+// /login before any page code runs. This runs at the edge, ahead of every
+// page and layout, so it's the one place that actually can't be bypassed by
+// a popup dismissal or a direct link the way the old client-side SiteGate
 // could be.
+//
+// A homepage exception existed here briefly (opened up "/" so Google's bots
+// could verify ads/search-console tags) and was reverted per chat — the
+// strict "nothing visible without an account" rule wins over Google's
+// tooling working, so Google's tag/verification detection will likely keep
+// failing until/unless that tradeoff is revisited.
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -43,27 +47,8 @@ const PUBLIC_API_PREFIXES = ["/api/webhooks"];
 // middleware edit each time.
 const GOOGLE_VERIFICATION_FILE = /^\/google[a-z0-9_-]+\.html$/i;
 
-// The homepage itself, and ONLY the exact "/" path (not a prefix — "/shop",
-// "/lab", etc. still fully gated) — opened up per chat so Google's various
-// automated bots (Ads tag detection, Search Console, Merchant Center) can
-// actually load a page and find what they're checking for, instead of
-// always being redirected to /login and never seeing any <head> tag. This
-// is a narrower version of the same problem as the verification file and
-// the merchant feed: anything unauthenticated bounced to /login looks like
-// a login page to an external checker, not the thing it came to verify.
-// Safe to show logged-out, by design: src/app/page.tsx already only
-// fetches/renders real product names, images, and prices when `user` is
-// set — a logged-out visitor (or a bot) just sees generic marketing copy,
-// trust badges, and the RUO disclaimer, never actual catalog/compound
-// specifics. That's what keeps this consistent with "nothing about the
-// research chemicals themselves is visible without an account."
-function isHomepage(pathname: string): boolean {
-  return pathname === "/";
-}
-
 function isPublicPath(pathname: string): boolean {
   if (GOOGLE_VERIFICATION_FILE.test(pathname)) return true;
-  if (isHomepage(pathname)) return true;
   return [...PUBLIC_PATH_PREFIXES, ...PUBLIC_API_PREFIXES].some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
