@@ -195,6 +195,9 @@ footer.site{ background:var(--ink); color:#cbd5e1; padding:52px 24px 28px; margi
 .footer-grid h5{ color:white; font-size:13.5px; margin:0 0 14px; letter-spacing:.03em; text-transform:uppercase; }
 .footer-grid a{ display:block; font-size:13.5px; color:#9aa5b1; margin-bottom:9px; }
 .footer-grid a:hover{ color:var(--orange); }
+/* Instagram link in the footer's Contact column — icon + handle on one row. */
+.footer-grid a.footer-social{ display:inline-flex; align-items:center; gap:8px; margin-top:4px; }
+.footer-grid a.footer-social svg{ flex-shrink:0; }
 .footer-legal{ font-size:12px; color:#7d8794; line-height:1.6; border-top:1px solid #2a3341; margin-top:36px; padding-top:20px; max-width:1180px; margin-left:auto; margin-right:auto; }
 .footer-legal a{ color:#7d8794; }
 

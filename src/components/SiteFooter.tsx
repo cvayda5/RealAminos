@@ -41,6 +41,30 @@ export default function SiteFooter() {
         <div>
           <h5>Contact</h5>
           <a href="mailto:support@shoprealaminos.com">support@shoprealaminos.com</a>
+          <a
+            href="https://www.instagram.com/shoprealaminos/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-social"
+            aria-label="RealAminos on Instagram"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="5" />
+              <circle cx="12" cy="12" r="4" />
+              <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+            </svg>
+            <span>@shoprealaminos</span>
+          </a>
         </div>
       </div>
       <div className="footer-legal">
