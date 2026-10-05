@@ -23,6 +23,12 @@ h1,h2,h3,h4,h5{margin:0;}
 
 /* ---------- generic form/card helpers (auth pages, admin) ---------- */
 .wrap{ max-width:760px; margin:0 auto; padding:40px 24px; }
+/* Logged-out landing page: the login form alone, centered, nothing else
+   (see SiteChrome.tsx). */
+.login-bare{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+.login-bare main.site-main{ width:100%; max-width:440px; padding:0; }
+.login-bare .wrap{ max-width:none; padding:0; }
+.login-bare .card{ margin-bottom:0; }
 .card{ background:white; border:1px solid var(--line); border-radius:14px; padding:28px; margin-bottom:20px; }
 label{ display:block; font-size:13px; font-weight:700; margin:14px 0 6px; }
 input,select{ width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:8px; font-size:14px; font-family:inherit; }

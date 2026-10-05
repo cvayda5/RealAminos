@@ -4,6 +4,7 @@ import { CartProvider } from "@/lib/cart/CartContext";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import SiteGate from "@/components/SiteGate";
+import SiteChrome from "@/components/SiteChrome";
 import CartDrawer from "@/components/CartDrawer";
 
 export const metadata = {
@@ -54,6 +55,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <head>
+        {/* Google Ads conversion tag (gtag.js) — Google's own instructions
+            say to place this immediately after <head>, so it goes first,
+            ahead of the view-mode script below. Loads on every page via
+            this root layout, the same way the view-mode script and the
+            Google site-verification meta tag (see `metadata` above) do.
+            Note: the sitewide login gate (src/middleware.ts) redirects any
+            signed-out visitor to /login before they see the real page they
+            clicked an ad to reach — /login is on the gate's public
+            allowlist, so this tag still fires there, but ad-click landing
+            pages won't be whatever the ad pointed to for a logged-out
+            visitor. Worth knowing when reading conversion data. */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16694066039" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer = window.dataLayer || [];\nfunction gtag(){dataLayer.push(arguments);}\ngtag('js', new Date());\ngtag('config', 'AW-16694066039');`,
+          }}
+        />
         {/* Applies a saved "View as iPhone/Computer" choice (see
             ViewModeToggle.tsx) before the page paints, so a returning
             visitor who forced mobile view doesn't see a flash of the
@@ -68,10 +86,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <CartProvider>
           <SiteGate isLoggedIn={!!user} />
-          <SiteHeader userEmail={user?.email ?? null} />
-          {children}
-          <SiteFooter />
-          <CartDrawer />
+          <SiteChrome
+            isLoggedIn={!!user}
+            header={<SiteHeader userEmail={user?.email ?? null} />}
+            footer={<SiteFooter />}
+            drawer={<CartDrawer />}
+          >
+            {children}
+          </SiteChrome>
         </CartProvider>
       </body>
     </html>
