@@ -74,6 +74,9 @@ export default function SiteFooter() {
         supplement, or cosmetic. Not for diagnostic use. Not evaluated by the FDA.
         <br />
         <br />© {new Date().getFullYear()} RealAminos. All rights reserved. &nbsp;·&nbsp;{" "}
+        <Link href="/privacy">Privacy Policy</Link> &nbsp;·&nbsp;{" "}
+        <Link href="/refund-policy">Refund Policy</Link> &nbsp;·&nbsp;{" "}
+        <Link href="/legal">Terms</Link> &nbsp;·&nbsp;{" "}
         <Link href="/admin/orders">Staff Admin Login</Link>
       </div>
       <ViewModeToggle />

@@ -15,80 +15,78 @@ export default function PrivacyPolicyPage() {
         </p>
         <p>
           This policy explains what information RealAminos (&quot;we,&quot; &quot;us&quot;), based in
-          Surprise, Arizona, collects when you use shoprealaminos.com, how we use it, and the
-          choices you have. By using the site you agree to this policy.
+          Surprise, Arizona, collects when you use shoprealaminos.com and how we use it. In short:
+          we use your information to fulfill your order, we keep it private, and we do not sell it.
         </p>
 
         <h3>Information We Collect</h3>
         <p>
           <strong>Account information:</strong> your email address and password (stored only as a
-          secure hash), plus the one-time codes we email you when you log in, and optional
-          two-factor authentication details if you enable them.
+          secure hash), and the one-time codes we email you when you log in.
         </p>
         <p>
           <strong>Order information:</strong> your name, shipping address, email, the items you
-          order, order totals, discount or affiliate codes you use, and points earned. If you pay
-          by card, payment is handled by our payment processor, Whop — we never see or store your
-          full card number. If you pay by Zelle, we see only the payment details Zelle provides us
-          (such as the sender name and the note on the payment).
+          order, order totals, and any discount or affiliate code you use. If you pay by card,
+          payment is handled by our payment processor, Whop — we never see or store your full card
+          number. If you pay by Zelle, we see only the payment details Zelle provides us (such as
+          the sender name and the payment note).
         </p>
         <p>
-          <strong>Affiliate applications:</strong> name, email, Instagram handle, requested code,
-          and Zelle contact information used to pay commissions.
-        </p>
-        <p>
-          <strong>Support messages:</strong> anything you send us through the Support page or by
-          email.
-        </p>
-        <p>
-          <strong>Technical information:</strong> basic data your browser sends automatically (IP
-          address, browser type, pages requested) and cookies described below.
+          <strong>Affiliate applications and support messages:</strong> the details you submit
+          through our Affiliate Program form (including the Zelle contact used to pay commissions)
+          and anything you send us through the Support page or by email.
         </p>
 
-        <h3>How We Use Information</h3>
+        <h3>How We Use Your Information</h3>
         <p>
-          To create and secure your account, process and ship orders, send order confirmations and
-          shipping updates, provide customer support, operate the affiliate and points programs,
-          prevent fraud and abuse, comply with legal obligations, and measure how our advertising
-          performs.
+          Your information is used to fulfill your orders: processing payment, packing and shipping
+          your order, emailing order confirmations and shipping updates, providing customer
+          support, and keeping your account secure. We also use it to keep the records we are
+          required to keep for accounting, tax, and legal purposes.
+        </p>
+        <p>
+          <strong>Email marketing:</strong> we may in the future send promotional emails (such as
+          new products and sales) to the email address on your account. If we do, every marketing
+          email will include a link to unsubscribe, and you can also opt out at any time by
+          emailing us. Order, shipping, and account-security emails are not marketing and will
+          still be sent.
         </p>
 
         <h3>Who We Share It With</h3>
         <p>
-          We do not sell your personal information. We share it only with service providers that
-          help us run the store, and only as needed for them to do so: Supabase (account and
-          database hosting), Vercel (website hosting), Resend (transactional email), Whop (card
-          payment processing), Shippo and the shipping carriers (labels and delivery), and Google
-          (advertising measurement). We may also disclose information if required by law or to
-          protect our rights, or in connection with a sale of the business.
+          We do not sell, rent, or trade your personal information. We share it only with the
+          service providers that help us run the store and deliver your order, and only what they
+          need to do their job: our website and database hosts (Vercel and Supabase), our email
+          service (Resend), our card payment processor (Whop), and Shippo and the shipping carriers
+          that deliver your package. We may also disclose information if the law requires it.
         </p>
 
-        <h3>Cookies &amp; Similar Technologies</h3>
+        <h3>Cookies</h3>
         <p>
-          We use a cookie to keep you logged in, and browser storage to remember small preferences
-          (such as your chosen page layout and that you have acknowledged our research-use
-          statement for the current visit). We also use Google&apos;s advertising tag, which may
-          set cookies to measure ad performance. You can block or delete cookies in your browser
-          settings; the site&apos;s login and checkout will not work without the login cookie.
+          We use a cookie to keep you logged in, and your browser&apos;s storage to remember small
+          preferences (such as your chosen page layout). The site also loads a Google advertising
+          tag, which may set cookies used to measure how our ads perform. You can block or delete
+          cookies in your browser settings, but you will not be able to log in or check out without
+          the login cookie.
         </p>
 
-        <h3>Data Retention &amp; Security</h3>
+        <h3>Security &amp; Retention</h3>
         <p>
-          We keep order and account records for as long as your account is active and as long as
-          needed for accounting, tax, and legal purposes. We use industry-standard safeguards,
-          including encrypted connections and email-based login verification, but no method of
-          transmission or storage is perfectly secure.
+          We take reasonable steps to protect your information, including encrypted connections,
+          hashed passwords, and email-code verification at every login. Access to customer data is
+          limited to our staff. We keep order and account records for as long as your account is
+          active and as long as needed for accounting, tax, and legal purposes. No method of
+          transmission or storage is perfectly secure, so we cannot guarantee absolute security.
         </p>
 
         <h3>Your Choices</h3>
         <p>
           You can ask us to access, correct, or delete the personal information we hold about you
-          (subject to records we must keep by law) by emailing{" "}
+          (except records we are legally required to keep) by emailing{" "}
           <a href="mailto:support@shoprealaminos.com" style={link}>
             support@shoprealaminos.com
           </a>
-          . You can unsubscribe from non-essential email at any time; order and security emails
-          will still be sent.
+          .
         </p>
 
         <h3>Age Requirement</h3>
