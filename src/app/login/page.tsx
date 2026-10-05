@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -213,11 +214,20 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <div style={{ textAlign: "right", marginTop: 6 }}>
+              <Link href="/forgot-password" style={{ fontSize: 12.5, color: "var(--muted)" }}>
+                Forgot password?
+              </Link>
+            </div>
 
             <button className="btn" type="submit" style={{ marginTop: 14 }}>Log In</button>
             {error && <p className="error">{error}</p>}
 
-
+            <p style={{ fontSize: 13, textAlign: "center", marginTop: 14 }}>
+              <Link href="/signup" style={{ color: "var(--orange)", fontWeight: 600 }}>
+                Sign up
+              </Link>
+            </p>
           </form>
         </div>
       </div>
