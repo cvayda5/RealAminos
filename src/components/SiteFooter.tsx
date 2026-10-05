@@ -34,7 +34,8 @@ export default function SiteFooter() {
           <Link href="/affiliates">Affiliate Program</Link>
           <Link href="/ruo-policy">RUO Policy</Link>
           <Link href="/refund-policy">Refund Policy</Link>
-          <Link href="/legal">Purchaser Agreement</Link>
+          <Link href="/legal">Terms &amp; Purchaser Agreement</Link>
+          <Link href="/privacy">Privacy Policy</Link>
           <Link href="/faq">FAQ</Link>
           <Link href="/support">Support</Link>
         </div>

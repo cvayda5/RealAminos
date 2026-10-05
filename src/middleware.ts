@@ -28,6 +28,9 @@ const PUBLIC_PATH_PREFIXES = [
   // human — gating this too would be a dead end with no way out. Say the
   // word if you want this closed as well.
   "/support",
+  // Privacy Policy — a legal page with nothing about the catalog on it, and
+  // Google/Meta ad review needs to be able to reach one without an account.
+  "/privacy",
 ];
 
 // Hit by Whop's server, not a browser — there's no login cookie to check,
@@ -47,8 +50,15 @@ const PUBLIC_API_PREFIXES = ["/api/webhooks"];
 // middleware edit each time.
 const GOOGLE_VERIFICATION_FILE = /^\/google[a-z0-9_-]+\.html$/i;
 
+// Crawler plumbing, not content: robots.txt and sitemap.xml must come back as
+// real plain-text/XML. Behind the gate they were redirected to /login and
+// returned the login page's HTML instead (flagged by the SEO audit). Both
+// only list/permit generic pages — see src/app/robots.ts and sitemap.ts.
+const CRAWLER_FILES = ["/robots.txt", "/sitemap.xml"];
+
 function isPublicPath(pathname: string): boolean {
   if (GOOGLE_VERIFICATION_FILE.test(pathname)) return true;
+  if (CRAWLER_FILES.includes(pathname)) return true;
   return [...PUBLIC_PATH_PREFIXES, ...PUBLIC_API_PREFIXES].some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );

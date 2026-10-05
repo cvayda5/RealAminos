@@ -28,8 +28,43 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
 
   const sortedVariants = [...product.product_variants].sort((a, b) => a.sort_order - b.sort_order);
 
+  // schema.org Product markup. Price/availability come straight from the
+  // variants (never invented). No aggregateRating/review fields on purpose —
+  // there are no real customer reviews yet, and marking up ratings that
+  // don't exist violates Google's structured-data policy.
+  const prices = sortedVariants.map((v) => v.price);
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    ...(product.description ? { description: product.description } : {}),
+    ...(product.image_url ? { image: product.image_url } : {}),
+    category: product.category,
+    brand: { "@type": "Brand", name: "RealAminos" },
+    ...(product.cas_number ? { sku: `CAS-${product.cas_number}`, mpn: product.cas_number } : {}),
+    ...(prices.length > 0
+      ? {
+          offers: {
+            "@type": "AggregateOffer",
+            priceCurrency: "USD",
+            lowPrice: Math.min(...prices).toFixed(2),
+            highPrice: Math.max(...prices).toFixed(2),
+            offerCount: prices.length,
+            availability: sortedVariants.some((v) => v.stock > 0)
+              ? "https://schema.org/InStock"
+              : "https://schema.org/OutOfStock",
+            url: `https://shoprealaminos.com/shop/${product.id}`,
+          },
+        }
+      : {}),
+  };
+
   return (
     <main className="site-main">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       <div className="breadcrumb">
         <Link href="/shop">Shop</Link> / <span>{product.category}</span> / <span>{product.name}</span>
       </div>

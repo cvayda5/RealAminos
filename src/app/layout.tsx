@@ -6,9 +6,37 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteGate from "@/components/SiteGate";
 import CartDrawer from "@/components/CartDrawer";
 
+const SITE_URL = "https://shoprealaminos.com";
+const SITE_TITLE = "RealAminos — Research Compounds";
+const SITE_DESCRIPTION =
+  "High-purity peptide and small-molecule research compounds. Research Use Only.";
+
 export const metadata = {
-  title: "RealAminos — Research Compounds",
-  description: "High-purity peptide and small-molecule research compounds. Research Use Only.",
+  // metadataBase turns every relative URL below (canonical, og:image, ...)
+  // into an absolute one.
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  // "./" = "this page's own URL", resolved per page against metadataBase —
+  // so the homepage self-references https://shoprealaminos.com/ and every
+  // other page canonicalizes to itself (query strings like ?next= dropped).
+  alternates: { canonical: "./" },
+  // Open Graph + Twitter card: what Instagram/Reddit/iMessage/Slack show
+  // when a link to the site is shared.
+  openGraph: {
+    type: "website",
+    siteName: "RealAminos",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    images: [{ url: "/email-logo.png", width: 867, height: 280, alt: "RealAminos" }],
+  },
+  twitter: {
+    card: "summary",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ["/email-logo.png"],
+  },
   // Google Merchant Center site-ownership verification — Next.js's
   // `verification.google` field renders this as
   // <meta name="google-site-verification" content="..." /> in <head>, which
@@ -19,6 +47,24 @@ export const metadata = {
   verification: {
     google: "pl5NIzPyULxpK2wk5O5OWbUetE30gf8og4wd8xy_Wpg",
   },
+};
+
+// schema.org Organization markup (JSON-LD). Only facts that are already
+// public on the site — no ratings, reviews, or phone numbers invented.
+const ORGANIZATION_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "RealAminos",
+  url: SITE_URL,
+  logo: `${SITE_URL}/email-logo.png`,
+  email: "support@shoprealaminos.com",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Surprise",
+    addressRegion: "AZ",
+    addressCountry: "US",
+  },
+  sameAs: ["https://www.instagram.com/shoprealaminos/"],
 };
 
 // viewportFit: "cover" is what lets env(safe-area-inset-bottom) resolve to a
@@ -83,6 +129,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD) }}
+        />
         <CartProvider>
           <SiteGate isLoggedIn={!!user} />
           <SiteHeader userEmail={user?.email ?? null} />
