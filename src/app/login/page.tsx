@@ -144,7 +144,12 @@ function LoginForm() {
     return (
       <main className="site-main">
         <div className="wrap">
+          <h1>Enter your login code</h1>
           <div className="card">
+            <p style={{ fontSize: 13.5, color: "var(--muted)" }}>
+              We emailed an 8-digit code to <strong>{email}</strong>. Enter it below to finish
+              logging in.
+            </p>
             <form onSubmit={handleEmailCodeSubmit}>
               <label htmlFor="emailCode">8-digit code from your email</label>
               <input
@@ -185,6 +190,7 @@ function LoginForm() {
     return (
       <main className="site-main">
         <div className="wrap">
+          <h1>Enter your 2FA code</h1>
           <div className="card">
             <form onSubmit={handleMfaSubmit}>
               <label htmlFor="mfaCode">6-digit code from your authenticator app</label>
@@ -201,6 +207,7 @@ function LoginForm() {
   return (
     <main className="site-main">
       <div className="wrap">
+        <h1>Log in</h1>
         <div className="card">
           <form onSubmit={handlePasswordSubmit}>
             <label htmlFor="email">Email</label>
@@ -224,9 +231,16 @@ function LoginForm() {
             {error && <p className="error">{error}</p>}
 
             <p style={{ fontSize: 13, textAlign: "center", marginTop: 14 }}>
+              Don&apos;t have an account?{" "}
               <Link href="/signup" style={{ color: "var(--orange)", fontWeight: 600 }}>
                 Sign up
               </Link>
+            </p>
+
+            <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 10 }}>
+              After your password, we&apos;ll email you a one-time code to finish logging in. For
+              your security, you&apos;ll be automatically logged out after 8 hours and will need
+              to sign in again.
             </p>
           </form>
         </div>

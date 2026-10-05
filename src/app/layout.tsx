@@ -4,7 +4,6 @@ import { CartProvider } from "@/lib/cart/CartContext";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import SiteGate from "@/components/SiteGate";
-import SiteChrome from "@/components/SiteChrome";
 import CartDrawer from "@/components/CartDrawer";
 
 export const metadata = {
@@ -86,14 +85,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <CartProvider>
           <SiteGate isLoggedIn={!!user} />
-          <SiteChrome
-            isLoggedIn={!!user}
-            header={<SiteHeader userEmail={user?.email ?? null} />}
-            footer={<SiteFooter />}
-            drawer={<CartDrawer />}
-          >
-            {children}
-          </SiteChrome>
+          <SiteHeader userEmail={user?.email ?? null} />
+          {children}
+          <SiteFooter />
+          <CartDrawer />
         </CartProvider>
       </body>
     </html>
