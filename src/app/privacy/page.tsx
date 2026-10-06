@@ -26,10 +26,9 @@ export default function PrivacyPolicyPage() {
         </p>
         <p>
           <strong>Order information:</strong> your name, shipping address, email, the items you
-          order, order totals, and any discount or affiliate code you use. If you pay by card,
-          payment is handled by our payment processor, Whop — we never see or store your full card
-          number. If you pay by Zelle, we see only the payment details Zelle provides us (such as
-          the sender name and the payment note).
+          order, order totals, and any discount or affiliate code you use. We accept payment by
+          Zelle, and we see only the payment details Zelle provides us (such as the sender name
+          and the payment note). We do not collect or store card or bank account numbers.
         </p>
         <p>
           <strong>Affiliate applications and support messages:</strong> the details you submit
@@ -57,8 +56,7 @@ export default function PrivacyPolicyPage() {
           We do not sell, rent, or trade your personal information. We share it only with the
           service providers that help us run the store and deliver your order, and only what they
           need to do their job: our website and database hosts (Vercel and Supabase), our email
-          service (Resend), our card payment processor (Whop), and Shippo and the shipping carriers
-          that deliver your package. We may also disclose information if the law requires it.
+          service (Resend), and Shippo and the shipping carriers that deliver your package. We may also disclose information if the law requires it.
         </p>
 
         <h3>Cookies</h3>

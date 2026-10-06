@@ -38,7 +38,6 @@ export default function CartDrawer() {
   const { items, removeItem, clear, subtotal, isDrawerOpen, closeDrawer } = useCart();
   const router = useRouter();
   const [waiverChecked, setWaiverChecked] = useState(false);
-  const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // `100dvh` (globals.css) reacts to Safari's OWN chrome collapsing
@@ -85,18 +84,18 @@ export default function CartDrawer() {
   }, [isDrawerOpen]);
 
   // 'cart' shows the line items + waiver. 'shipping' collects where the
-  // order actually ships to. 'payment' is where the customer picks Card
-  // (Whop) or Zelle — once shipping info is in, the order number they'd
-  // need for a Zelle payment note can be generated (Zelle creates the real
-  // order immediately; Card still just redirects to Whop).
+  // order actually ships to. 'payment' is where the customer pays — Zelle
+  // is the only payment method (card checkout through Whop was removed after
+  // that account was banned). Once shipping info is in, the order number
+  // they'd need for the Zelle payment note can be generated (Zelle creates
+  // the real order immediately).
   const [step, setStep] = useState<"cart" | "shipping" | "payment">("cart");
   const [shipping, setShipping] = useState<ShippingDetails>(EMPTY_SHIPPING);
 
-  // Which payment method is selected on the 'payment' step, and — once
-  // Zelle has actually created its (unpaid) order — the result of that,
-  // cached here so flipping back and forth between Card/Zelle doesn't
-  // create a second order.
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "zelle" | null>(null);
+  // Zelle is the only payment method, so it's selected by default. Once it
+  // has actually created its (unpaid) order, the result is cached in
+  // zelleOrder so re-opening this step doesn't create a second order.
+  const [paymentMethod, setPaymentMethod] = useState<"zelle" | null>("zelle");
   const [zelleOrder, setZelleOrder] = useState<ZelleOrderResult | null>(null);
   const [zelleLoading, setZelleLoading] = useState(false);
   const [zelleError, setZelleError] = useState<string | null>(null);
@@ -226,39 +225,10 @@ export default function CartDrawer() {
     discountCode: appliedDiscount?.code,
   });
 
-  async function handleCardCheckout() {
-    setError(null);
-    setPlacing(true);
-
-    // Kicks off a Whop-hosted checkout rather than creating the order
-    // directly — the cart/points reservations aren't touched at all here.
-    // The real order only gets created once Whop confirms payment via
-    // webhook (see /api/webhooks/whop); this just redirects the browser to
-    // go pay.
-    const res = await fetch("/api/checkout/whop", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(cartPayload()),
-    });
-
-    const body = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      setPlacing(false);
-      setError(body.error ?? "Something went wrong starting checkout.");
-      return;
-    }
-
-    // Full redirect (not client-side navigation) — this is leaving the site
-    // entirely to go pay on Whop's hosted checkout page.
-    window.location.href = body.purchaseUrl;
-  }
-
-  // Selecting Zelle immediately creates the real (unpaid) order — unlike
-  // Card, there's no external checkout session to send the customer to, and
-  // they need the order number right away to put in the Zelle payment note.
-  // Cached in zelleOrder so toggling back to Card and then back to Zelle
-  // doesn't create a second order for the same cart.
+  // Selecting Zelle immediately creates the real (unpaid) order — there's no
+  // external checkout session to send the customer to, and they need the
+  // order number right away to put in the Zelle payment note. Cached in
+  // zelleOrder so it doesn't create a second order for the same cart.
   async function handleSelectZelle() {
     setPaymentMethod("zelle");
     if (zelleOrder || zelleLoading) return;
@@ -286,9 +256,9 @@ export default function CartDrawer() {
       createdAt: body.createdAt,
     });
     // The order is now real (unpaid, but real — any redeemed reward points
-    // are already spent/linked to it) — clear the cart the same way a
-    // completed Card order does, rather than leaving these items sitting in
-    // the drawer looking like they still need checking out.
+    // are already spent/linked to it) — clear the cart rather than leaving
+    // these items sitting in the drawer looking like they still need
+    // checking out.
     clear();
   }
 
@@ -296,7 +266,7 @@ export default function CartDrawer() {
     // Closing the drawer mid-checkout shouldn't strand the customer
     // mid-flow next time they open it with an empty cart view.
     setStep("cart");
-    setPaymentMethod(null);
+    setPaymentMethod("zelle");
     setZelleOrder(null);
     setZelleError(null);
     closeDrawer();
@@ -565,21 +535,6 @@ export default function CartDrawer() {
               </div>
 
               <div
-                className={`payment-option ${paymentMethod === "card" ? "selected" : ""}`}
-                onClick={() => setPaymentMethod("card")}
-                style={{
-                  border: `2px solid ${paymentMethod === "card" ? "var(--orange)" : "var(--line)"}`,
-                  borderRadius: 10,
-                  padding: 14,
-                  marginBottom: 12,
-                  cursor: "pointer",
-                }}
-              >
-                <strong>💳 Card</strong>
-                <div style={{ fontSize: 12.5, color: "var(--muted)" }}>{money(grandTotal)} — pay securely via Whop</div>
-              </div>
-
-              <div
                 className={`payment-option ${paymentMethod === "zelle" ? "selected" : ""}`}
                 onClick={() => setPaymentMethod("zelle")}
                 style={{
@@ -654,31 +609,18 @@ export default function CartDrawer() {
                   className="btn btn-outline"
                   style={{ flex: 1 }}
                   onClick={() => setStep("shipping")}
-                  disabled={placing}
                 >
                   Back
                 </button>
-                {paymentMethod === "zelle" ? (
-                  <button
-                    type="button"
-                    className="btn"
-                    style={{ flex: 2 }}
-                    onClick={handleClose}
-                    disabled={!zelleOrder}
-                  >
-                    Done
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn"
-                    style={{ flex: 2 }}
-                    onClick={handleCardCheckout}
-                    disabled={placing || paymentMethod !== "card"}
-                  >
-                    {placing ? "Redirecting to payment…" : "Continue to Payment"}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ flex: 2 }}
+                  onClick={handleClose}
+                  disabled={!zelleOrder}
+                >
+                  Done
+                </button>
               </div>
               {error && <p className="error">{error}</p>}
             </div>
