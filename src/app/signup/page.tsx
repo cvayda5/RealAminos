@@ -46,6 +46,19 @@ export default function SignupPage() {
       return;
     }
 
+    // Google Ads conversion: "Lead Form Submitted". The Google tag itself
+    // (gtag.js, AW-16694066039) is loaded on every page by the root layout,
+    // so this just reports the event. The signup form swaps to its "check
+    // your email" screen in place instead of navigating to a separate thank-
+    // you page, so the event snippet Google provides is fired here, at the
+    // moment signUp() succeeds, rather than pasted into a page's <head>.
+    try {
+      const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
+      gtag?.("event", "conversion", { send_to: "AW-16694066039/Ke3_CL3ywdIZEPf2rJg-" });
+    } catch {
+      // Tracking must never get in the way of a successful signup.
+    }
+
     setSubmitted(true);
     setCooldown(RESEND_COOLDOWN_SECONDS);
   }
