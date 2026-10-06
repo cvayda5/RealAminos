@@ -104,13 +104,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             say to place this immediately after <head>, so it goes first,
             ahead of the view-mode script below. Loads on every page via
             this root layout, the same way the view-mode script and the
-            Google site-verification meta tag (see `metadata` above) do.
-            Note: the sitewide login gate (src/middleware.ts) redirects any
-            signed-out visitor to /login before they see the real page they
-            clicked an ad to reach — /login is on the gate's public
-            allowlist, so this tag still fires there, but ad-click landing
-            pages won't be whatever the ad pointed to for a logged-out
-            visitor. Worth knowing when reading conversion data. */}
+            Google site-verification meta tag (see `metadata` above) do. */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16694066039" />
         <script
           dangerouslySetInnerHTML={{
@@ -134,7 +128,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD) }}
         />
         <CartProvider>
-          <SiteGate isLoggedIn={!!user} />
+          <SiteGate />
           <SiteHeader userEmail={user?.email ?? null} />
           {children}
           <SiteFooter />

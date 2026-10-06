@@ -1,13 +1,24 @@
 import type { MetadataRoute } from "next";
 
-// Only pages a signed-out crawler can actually reach right now. Everything
-// else (home, shop, products, FAQ, lab, ...) is behind the account gate (see
-// src/middleware.ts) and just redirects to /login for a bot — listing
-// redirecting URLs in a sitemap gets them flagged as errors. If/when the
-// public pages are opened up, add them back here (and products, from the
-// products table).
+// Static pages. Product pages (/shop/<id>) aren't listed here yet — add them
+// from the products table if you want them in the sitemap.
 const BASE = "https://shoprealaminos.com";
-const PATHS = ["/login", "/signup", "/support", "/privacy"];
+const PATHS = [
+  "/",
+  "/shop",
+  "/lab",
+  "/about",
+  "/faq",
+  "/affiliates",
+  "/points",
+  "/support",
+  "/ruo-policy",
+  "/refund-policy",
+  "/legal",
+  "/privacy",
+  "/login",
+  "/signup",
+];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return PATHS.map((path) => ({ url: `${BASE}${path === "/" ? "" : path}` }));

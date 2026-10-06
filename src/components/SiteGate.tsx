@@ -32,17 +32,7 @@ const EMPTY_CHECKS: GateChecks = {
   terms: false,
 };
 
-interface SiteGateProps {
-  // TEMPORARY: now that the sitewide account gate (src/middleware.ts)
-  // already stops anyone logged-out from reaching any page, this waiver
-  // popup no longer needs to guard the door too — it's moved to showing
-  // only once someone's actually signed in, right after account creation
-  // covers the "who are you" part. Revert by removing this prop (and the
-  // early-return below) to go back to showing it before login again.
-  isLoggedIn: boolean;
-}
-
-export default function SiteGate({ isLoggedIn }: SiteGateProps) {
+export default function SiteGate() {
   // "ready" stays false for one tick while we check sessionStorage (which
   // only exists in the browser, not during server rendering) — this avoids
   // briefly flashing the gate on every load before we know it was already
@@ -56,11 +46,6 @@ export default function SiteGate({ isLoggedIn }: SiteGateProps) {
     setDismissed(window.sessionStorage.getItem(STORAGE_KEY) === "1");
     setReady(true);
   }, []);
-
-  // Logged-out visitors only ever see /login, /signup, /forgot-password,
-  // /reset-password, /auth/callback, or /support (see middleware.ts) — none
-  // of those should show the researcher agreement on top of them.
-  if (!isLoggedIn) return null;
 
   function toggle(key: keyof GateChecks) {
     setChecks((c) => ({ ...c, [key]: !c[key] }));

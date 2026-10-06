@@ -1,22 +1,12 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { ProductWithVariants } from "@/types/database";
 import AddToCartBox from "./AddToCartBox";
 import ProductVisualCarousel from "./ProductVisualCarousel";
 
-// Same account gate as /shop — see the comment there. Applies here too on
-// purpose, including for traffic landing from Google Shopping/Ads, which
-// means those ads will likely get disapproved or flagged while this is on.
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirect(`/login?next=${encodeURIComponent(`/shop/${params.id}`)}`);
-  }
 
   const { data: product } = await supabase
     .from("products")

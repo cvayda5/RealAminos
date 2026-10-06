@@ -6,23 +6,13 @@ import ProductCard from "@/components/ProductCard";
 export default async function Home() {
   const supabase = createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Product data (name, image, price) now requires an account to view
-  // anywhere on the site, including here — so a logged-out visitor never
-  // has it fetched or rendered on the homepage either. See /shop and
-  // /shop/[id] for the same gate on the actual catalog pages.
-  const { data: products } = user
-    ? await supabase
-        .from("products")
-        .select("*, product_variants(*)")
-        .eq("is_active", true)
-        .order("created_at")
-        .limit(8)
-        .returns<ProductWithVariants[]>()
-    : { data: null };
+  const { data: products } = await supabase
+    .from("products")
+    .select("*, product_variants(*)")
+    .eq("is_active", true)
+    .order("created_at")
+    .limit(8)
+    .returns<ProductWithVariants[]>();
 
   return (
     <>
@@ -102,28 +92,11 @@ export default async function Home() {
               View all products →
             </Link>
           </div>
-          {user ? (
-            <div className="product-grid">
-              {products?.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
-          ) : (
-            <div className="card" style={{ textAlign: "center", padding: "40px 24px" }}>
-              <p style={{ margin: "0 0 16px", color: "var(--muted)" }}>
-                Create a free account to view our research compound catalog, pricing, and
-                Certificates of Analysis.
-              </p>
-              <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-                <Link href="/signup" className="btn">
-                  Create Account
-                </Link>
-                <Link href="/login" className="btn-ghost btn">
-                  Log In
-                </Link>
-              </div>
-            </div>
-          )}
+          <div className="product-grid">
+            {products?.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
         </section>
 
         <section className="block" style={{ paddingTop: 0 }}>
