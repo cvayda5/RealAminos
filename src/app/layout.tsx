@@ -100,6 +100,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <head>
+        {/* Site typefaces (Inter for UI/headlines, Instrument Serif italic for
+            the accent words in headlines). Display-swap so text never waits
+            on the font; the CSS font stacks fall back to system fonts. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap"
+        />
         {/* Google Ads conversion tag (gtag.js) — Google's own instructions
             say to place this immediately after <head>, so it goes first,
             ahead of the view-mode script below. Loads on every page via

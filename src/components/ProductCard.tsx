@@ -19,26 +19,8 @@ export default function ProductCard({ product }: { product: ProductWithVariants 
   return (
     <div className="pcard">
       <Link href={`/shop/${product.id}`} className="thumb">
-        <span className="badge-purity">&gt;99%</span>
-        {!comingSoon && priceDisplay.active && (
-          <span
-            style={{
-              position: "absolute",
-              top: 10,
-              left: 10,
-              background: "#059669",
-              color: "#fff",
-              fontSize: 11,
-              fontWeight: 800,
-              letterSpacing: ".02em",
-              padding: "4px 8px",
-              borderRadius: 6,
-              zIndex: 1,
-            }}
-          >
-            SALE
-          </span>
-        )}
+        <span className="badge-purity">&gt;99% pure</span>
+        {!comingSoon && priceDisplay.active && <span className="badge-sale">SALE</span>}
         {product.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={product.image_url} alt={product.name} className="thumb-photo" />
@@ -57,15 +39,15 @@ export default function ProductCard({ product }: { product: ProductWithVariants 
         {product.cas_number && <div className="cas">CAS {product.cas_number}</div>}
         <div className="row-bottom">
           {comingSoon ? (
-            <div className="price" style={{ color: "var(--muted)" }}>
+            <div className="price price-soon">
               Coming Soon
             </div>
           ) : priceDisplay.active ? (
             <div className="price">
-              <span style={{ textDecoration: "line-through", color: "var(--muted)", fontWeight: 600, fontSize: 12.5, marginRight: 5 }}>
+              <span className="price-was">
                 ${priceDisplay.original.toFixed(2)}
               </span>
-              <span style={{ color: "#059669" }}>${priceDisplay.sale.toFixed(2)}</span> <small>from</small>
+              <span className="price-sale">${priceDisplay.sale.toFixed(2)}</span> <small>from</small>
             </div>
           ) : (
             <div className="price">

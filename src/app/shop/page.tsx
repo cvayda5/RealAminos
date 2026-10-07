@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { ProductWithVariants } from "@/types/database";
 import ProductCard from "@/components/ProductCard";
+import { BULK_TIERS } from "@/lib/promotions/bulkPricing";
 
 // Server Component: reads the real product catalog straight from Postgres.
 // Category filtering happens via a URL query param (?category=...) so the
@@ -20,12 +21,14 @@ export default async function ShopPage({ searchParams }: { searchParams: { categ
 
   if (error) {
     return (
-      <main className="site-main">
-        <div className="wrap">
-          <h1>Shop</h1>
-          <p className="error">Could not load products: {error.message}</p>
-        </div>
-      </main>
+      <div className="dark-page">
+        <main className="site-main">
+          <div className="wrap" style={{ color: "#e9edf4" }}>
+            <h1>Shop</h1>
+            <p className="error">Could not load products: {error.message}</p>
+          </div>
+        </main>
+      </div>
     );
   }
 
@@ -33,57 +36,73 @@ export default async function ShopPage({ searchParams }: { searchParams: { categ
   const categories = [...new Set(all.map((p) => p.category))];
   const visible = activeCategory ? all.filter((p) => p.category === activeCategory) : all;
 
-  return (
-    <main className="site-main">
-      <div style={{ paddingTop: 36 }}>
-        <h1 style={{ fontSize: 30, margin: "0 0 6px" }}>Shop Research Compounds</h1>
-        <p style={{ color: "var(--muted)", fontSize: 14, margin: 0 }}>
-          All compounds are &gt;99% purity, independently tested, and sold for laboratory
-          research use only.
-        </p>
-      </div>
+  // Quantity-discount strip — read straight from the same BULK_TIERS the
+  // product page, cart and checkout use, so it can never drift from what
+  // is actually charged.
+  const tierCells = BULK_TIERS.map((t, i) => {
+    const next = BULK_TIERS[i + 1];
+    const label = next
+      ? next.minQty - 1 === t.minQty
+        ? `Buy ${t.minQty}`
+        : `Buy ${t.minQty}–${next.minQty - 1}`
+      : `Buy ${t.minQty}+`;
+    return { label, off: `${t.percentOff}% off` };
+  });
 
-      <div className="shop-layout">
-        <div className="filter-panel">
-          <h5>Category</h5>
-          <Link href="/shop" className={`filter-item ${!activeCategory ? "active" : ""}`}>
-            All Products
+  return (
+    <div className="dark-page">
+      <main className="site-main">
+        <div className="shop-hero">
+          <div className="hx-pill">
+            <i /> {all.length} compounds &nbsp;·&nbsp; &gt;99% purity
+          </div>
+          <h1 className="shop-title">
+            Shop research <em>compounds</em>
+          </h1>
+          <p className="hx-lead">
+            All compounds are &gt;99% purity, independently tested, and sold for laboratory
+            research use only.
+          </p>
+        </div>
+
+        <div className="chip-row">
+          <Link href="/shop" className={`chip ${!activeCategory ? "active" : ""}`}>
+            All
           </Link>
           {categories.map((c) => (
             <Link
               key={c}
               href={`/shop?category=${encodeURIComponent(c)}`}
-              className={`filter-item ${activeCategory === c ? "active" : ""}`}
+              className={`chip ${activeCategory === c ? "active" : ""}`}
             >
               {c}
             </Link>
           ))}
-          <h5 style={{ marginTop: 26 }}>Purity</h5>
-          <div className="filter-item active">&gt;99% (all products)</div>
         </div>
 
-        <div>
-          <div className="filter-row">
-            <Link href="/shop" className={`chip ${!activeCategory ? "active" : ""}`}>
-              All
-            </Link>
-            {categories.map((c) => (
-              <Link
-                key={c}
-                href={`/shop?category=${encodeURIComponent(c)}`}
-                className={`chip ${activeCategory === c ? "active" : ""}`}
-              >
-                {c}
-              </Link>
-            ))}
+        <div className="bulk-strip">
+          <div>
+            <small>Buy any 1</small>
+            <b>Full price</b>
           </div>
-          <div className="product-grid">
-            {visible.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
+          {tierCells.map((t) => (
+            <div key={t.label}>
+              <small>{t.label}</small>
+              <b>{t.off}</b>
+            </div>
+          ))}
         </div>
-      </div>
-    </main>
+
+        <div className="shop-count">
+          Showing {visible.length} {visible.length === 1 ? "compound" : "compounds"}
+        </div>
+
+        <div className="product-grid shop-grid">
+          {visible.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
+        </div>
+      </main>
+    </div>
   );
 }
