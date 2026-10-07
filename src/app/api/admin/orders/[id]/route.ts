@@ -55,9 +55,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     previousStatus = (current?.status as OrderStatus | undefined) ?? null;
     previousOrder = current ?? null;
 
-    if (current?.status === "Awaiting Payment" && current.payment_method === "zelle" && body.status !== "Awaiting Payment") {
+    if (current?.status === "Awaiting Payment" && (current.payment_method === "zelle" || current.payment_method === "bitcoin") && body.status !== "Awaiting Payment") {
       return NextResponse.json(
-        { error: "Use \"Mark Paid & Fulfill\" to move a Zelle order out of Awaiting Payment." },
+        { error: "Use \"Mark Paid & Fulfill\" to move a Zelle or Bitcoin order out of Awaiting Payment." },
         { status: 400 }
       );
     }
@@ -86,7 +86,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       id: params.id,
       order_number: previousOrder.order_number,
       user_id: previousOrder.user_id,
-      payment_method: previousOrder.payment_method as "card" | "zelle",
+      payment_method: previousOrder.payment_method as "card" | "zelle" | "bitcoin",
       total: previousOrder.total,
       subtotal: previousOrder.subtotal,
     });

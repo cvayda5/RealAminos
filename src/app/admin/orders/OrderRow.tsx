@@ -124,6 +124,7 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
   }
 
   const isZelle = order.payment_method === "zelle";
+  const isBitcoin = order.payment_method === "bitcoin";
   const isAwaitingPayment = order.status === "Awaiting Payment";
   const grandTotal = (order.total ?? order.subtotal) + order.shipping_fee - (order.zelle_discount_amount ?? 0);
   const hasDiscount = !!order.discount_code && order.discount_percent > 0;
@@ -135,6 +136,11 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
         {isZelle && (
           <div style={{ fontSize: 10.5, fontWeight: 800, color: "#c2540c", letterSpacing: ".03em", marginTop: 2 }}>
             ZELLE
+          </div>
+        )}
+        {isBitcoin && (
+          <div style={{ fontSize: 10.5, fontWeight: 800, color: "#c2540c", letterSpacing: ".03em", marginTop: 2 }}>
+            BITCOIN
           </div>
         )}
       </td>
@@ -187,9 +193,14 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
         {order.points_redeemed > 0 && (
           <div style={{ fontSize: 11, color: "#059669" }}>Redeemed — {order.points_redeemed} pts</div>
         )}
-        {isAwaitingPayment && (
+        {isAwaitingPayment && isZelle && (
           <div style={{ fontSize: 11, fontWeight: 800, color: "#b91c1c", marginTop: 4 }}>
             Verify note says {order.order_number} before marking paid
+          </div>
+        )}
+        {isAwaitingPayment && isBitcoin && (
+          <div style={{ fontSize: 11, fontWeight: 800, color: "#b91c1c", marginTop: 4 }}>
+            Bitcoin confirms automatically — only use Mark Paid after verifying the invoice is settled in BTCPay
           </div>
         )}
         {order.status === "Processing" && order.zelle_marked_paid_by === "customer" && (

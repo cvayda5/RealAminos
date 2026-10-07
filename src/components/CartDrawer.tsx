@@ -24,6 +24,34 @@ interface ZelleOrderResult {
   createdAt: string;
 }
 
+interface BitcoinOrderResult {
+  orderId: string;
+  orderNumber: string;
+  amountDue: number;
+  checkoutUrl: string;
+}
+
+// Google Ads conversion: "Purchase". The Google tag itself (gtag.js,
+// AW-16694066039) is loaded on every page by the root layout, so this only
+// reports the event. Fires once, right when an order is created (checkout
+// happens in this drawer, so there's no separate thank-you page to put the
+// snippet on). transaction_id = the order number, which lets Google ignore a
+// duplicate report of the same order. NOTE: the order exists before the
+// payment is confirmed, so this counts orders placed, not orders paid.
+function reportPurchaseConversion(orderNumber: unknown, amountDue: unknown) {
+  try {
+    const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
+    gtag?.("event", "conversion", {
+      send_to: "AW-16694066039/i4JnCMnu5pMdEPf2rJg-",
+      value: Number(amountDue) || 0,
+      currency: "USD",
+      transaction_id: String(orderNumber ?? ""),
+    });
+  } catch {
+    // Tracking must never get in the way of a successful order.
+  }
+}
+
 const EMPTY_SHIPPING: ShippingDetails = {
   name: "",
   phone: "",
@@ -96,8 +124,11 @@ export default function CartDrawer() {
   // Zelle is the only payment method, so it's selected by default. Once it
   // has actually created its (unpaid) order, the result is cached in
   // zelleOrder so re-opening this step doesn't create a second order.
-  const [paymentMethod, setPaymentMethod] = useState<"zelle" | null>("zelle");
+  const [paymentMethod, setPaymentMethod] = useState<"zelle" | "bitcoin" | null>("zelle");
   const [zelleOrder, setZelleOrder] = useState<ZelleOrderResult | null>(null);
+  const [bitcoinOrder, setBitcoinOrder] = useState<BitcoinOrderResult | null>(null);
+  const [bitcoinLoading, setBitcoinLoading] = useState(false);
+  const [bitcoinError, setBitcoinError] = useState<string | null>(null);
   const [zelleLoading, setZelleLoading] = useState(false);
   const [zelleError, setZelleError] = useState<string | null>(null);
 
@@ -258,29 +289,45 @@ export default function CartDrawer() {
       createdAt: body.createdAt,
     });
 
-    // Google Ads conversion: "Purchase". The Google tag itself (gtag.js,
-    // AW-16694066039) is loaded on every page by the root layout, so this
-    // only reports the event. Fires once, right when the order is created
-    // (checkout happens in this drawer, so there's no separate thank-you
-    // page to put the snippet on). transaction_id = the order number, which
-    // lets Google ignore a duplicate report of the same order. NOTE: the
-    // order exists before staff confirm the Zelle payment, so this counts
-    // orders placed, not orders paid.
-    try {
-      const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
-      gtag?.("event", "conversion", {
-        send_to: "AW-16694066039/i4JnCMnu5pMdEPf2rJg-",
-        value: Number(body.amountDue) || 0,
-        currency: "USD",
-        transaction_id: String(body.orderNumber ?? ""),
-      });
-    } catch {
-      // Tracking must never get in the way of a successful order.
-    }
+    reportPurchaseConversion(body.orderNumber, body.amountDue);
     // The order is now real (unpaid, but real — any redeemed reward points
     // are already spent/linked to it) — clear the cart rather than leaving
     // these items sitting in the drawer looking like they still need
     // checking out.
+    clear();
+  }
+
+  // Bitcoin: creates the real (unpaid) order plus a BTCPay invoice, then shows
+  // a button that opens BTCPay's hosted payment page. The order finalizes
+  // itself when BTCPay's webhook reports the payment confirmed — the customer
+  // doesn't need to come back and press anything.
+  async function handleSelectBitcoin() {
+    if (bitcoinOrder || bitcoinLoading || zelleOrder) return;
+
+    setBitcoinLoading(true);
+    setBitcoinError(null);
+
+    const res = await fetch("/api/checkout/bitcoin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cartPayload()),
+    });
+    const body = await res.json().catch(() => ({}));
+    setBitcoinLoading(false);
+
+    if (!res.ok) {
+      setBitcoinError(body.error ?? "Something went wrong starting checkout.");
+      return;
+    }
+
+    setBitcoinOrder({
+      orderId: body.orderId,
+      orderNumber: body.orderNumber,
+      amountDue: body.amountDue,
+      checkoutUrl: body.checkoutUrl,
+    });
+
+    reportPurchaseConversion(body.orderNumber, body.amountDue);
     clear();
   }
 
@@ -291,6 +338,8 @@ export default function CartDrawer() {
     setPaymentMethod("zelle");
     setZelleOrder(null);
     setZelleError(null);
+    setBitcoinOrder(null);
+    setBitcoinError(null);
     closeDrawer();
   }
 
@@ -572,7 +621,9 @@ export default function CartDrawer() {
 
               <div
                 className={`payment-option ${paymentMethod === "zelle" ? "selected" : ""}`}
-                onClick={() => setPaymentMethod("zelle")}
+                onClick={() => {
+                  if (!bitcoinOrder) setPaymentMethod("zelle");
+                }}
                 style={{
                   border: `2px solid ${paymentMethod === "zelle" ? "var(--orange)" : "var(--line)"}`,
                   borderRadius: 10,
@@ -587,6 +638,83 @@ export default function CartDrawer() {
                   {money(grandTotal * (1 - ZELLE_DISCOUNT_PERCENT / 100))} — manual payment, confirmed by staff
                 </div>
               </div>
+
+              <div
+                className={`payment-option ${paymentMethod === "bitcoin" ? "selected" : ""}`}
+                onClick={() => {
+                  if (!zelleOrder) setPaymentMethod("bitcoin");
+                }}
+                style={{
+                  border: `2px solid ${paymentMethod === "bitcoin" ? "var(--orange)" : "var(--line)"}`,
+                  borderRadius: 10,
+                  padding: 14,
+                  marginBottom: 12,
+                  cursor: "pointer",
+                }}
+              >
+                <strong>₿ Bitcoin</strong>
+                <div style={{ fontSize: 12.5, color: "var(--muted)" }}>
+                  {money(bitcoinOrder?.amountDue ?? grandTotal)} — confirms automatically, no manual steps
+                </div>
+              </div>
+
+              {paymentMethod === "bitcoin" && (
+                <div
+                  style={{
+                    background: "#fff7ed",
+                    border: "1px solid #fdba74",
+                    borderRadius: 10,
+                    padding: 14,
+                    marginTop: 4,
+                  }}
+                >
+                  {!bitcoinOrder ? (
+                    <>
+                      <p style={{ margin: "0 0 10px", fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.5 }}>
+                        You&apos;ll pay <strong>{money(grandTotal)}</strong> in Bitcoin on a secure payment page.
+                        The amount is locked in US dollars at checkout, and your order moves to Processing on
+                        its own once the payment confirms — usually within about an hour.
+                      </p>
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{ width: "100%" }}
+                        onClick={handleSelectBitcoin}
+                        disabled={bitcoinLoading}
+                      >
+                        {bitcoinLoading ? "Creating your invoice…" : "Continue with Bitcoin"}
+                      </button>
+                      {bitcoinError && (
+                        <p className="error" style={{ marginTop: 8 }}>
+                          {bitcoinError}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <p style={{ margin: "0 0 4px", fontSize: 13.5 }}>
+                        Order number: <strong>{bitcoinOrder.orderNumber}</strong>
+                      </p>
+                      <p style={{ margin: "0 0 12px", fontSize: 13.5 }}>
+                        Amount due: <strong>{money(bitcoinOrder.amountDue)}</strong>
+                      </p>
+                      <a
+                        className="btn"
+                        href={bitcoinOrder.checkoutUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ display: "block", textAlign: "center", textDecoration: "none" }}
+                      >
+                        Pay with Bitcoin →
+                      </a>
+                      <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
+                        The payment page opens in a new tab and expires after 60 minutes. Once your payment
+                        confirms, this order updates automatically — track it anytime on the My Orders page.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
 
               {paymentMethod === "zelle" && (
                 <div
@@ -653,7 +781,7 @@ export default function CartDrawer() {
                   className="btn"
                   style={{ flex: 2 }}
                   onClick={handleClose}
-                  disabled={!zelleOrder}
+                  disabled={!zelleOrder && !bitcoinOrder}
                 >
                   Done
                 </button>

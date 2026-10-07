@@ -15,7 +15,7 @@ const ADMIN_NOTIFICATION_EMAIL = "colton.vayda@gmail.com";
 
 type AdminOrderNotificationInput = {
   orderNumber: string;
-  paymentMethod: "card" | "zelle";
+  paymentMethod: "card" | "zelle" | "bitcoin";
   // Only ever true for Zelle — a card order is only created once Whop has
   // already confirmed the payment, so by the time this fires it's always
   // effectively paid.
@@ -38,6 +38,8 @@ export async function sendAdminOrderNotification(input: AdminOrderNotificationIn
   const paymentLine =
     input.paymentMethod === "zelle"
       ? `Zelle${input.awaitingPayment ? " (awaiting payment)" : ""}`
+      : input.paymentMethod === "bitcoin"
+      ? `Bitcoin${input.awaitingPayment ? " (awaiting payment — confirms automatically)" : ""}`
       : "Card";
 
   const text = `New order — #${input.orderNumber}
@@ -82,7 +84,7 @@ View it at https://shoprealaminos.com/admin/orders`;
         ${input.shipping.name} — ${input.shipping.city}, ${input.shipping.state}
       </p>
     </div>
-    
+    <a
       href="https://shoprealaminos.com/admin/orders"
       style="display:inline-block;margin-top:18px;background:${
         BRAND.orange

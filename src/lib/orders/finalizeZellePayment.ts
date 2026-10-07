@@ -1,4 +1,7 @@
-// Shared by both ways a Zelle order can actually get paid:
+// Shared by every way an "Awaiting Payment" order can actually get paid:
+//  - Bitcoin: the BTCPay webhook (src/app/api/webhooks/btcpay/route.ts) the
+//    moment an invoice settles, or staff's button as a fallback
+// Zelle orders get paid two ways:
 //  - the customer's own "I've Sent My Zelle Payment" button
 //    (src/app/api/orders/[id]/mark-paid/route.ts), gated to a 20-minute
 //    window from order creation
@@ -31,13 +34,52 @@ export function isZellePaymentWindowExpired(order: Pick<OrderWithItems, "created
 
 type FinalizeResult = { ok: true } | { ok: false; status: number; error: string };
 
+// Kept under its old name so the existing Zelle callers don't change.
 export async function finalizeZellePayment(
   admin: ReturnType<typeof createAdminClient>,
   order: OrderWithItems,
   markedPaidBy: "customer" | "staff"
 ): Promise<FinalizeResult> {
-  if (order.payment_method !== "zelle" || order.status !== "Awaiting Payment") {
+  if (order.payment_method !== "zelle") {
     return { ok: false, status: 400, error: "This order isn't an unpaid Zelle order — nothing to mark paid." };
+  }
+  return finalizeOrderPayment(admin, order, markedPaidBy);
+}
+
+// Works for both Zelle and Bitcoin orders. For Bitcoin, markedPaidBy is
+// null when BTCPay's webhook confirmed the payment automatically (and
+// zelle_marked_paid_by is only ever written for Zelle orders).
+export async function finalizeOrderPayment(
+  admin: ReturnType<typeof createAdminClient>,
+  order: OrderWithItems,
+  markedPaidBy: "customer" | "staff" | null
+): Promise<FinalizeResult> {
+  if ((order.payment_method !== "zelle" && order.payment_method !== "bitcoin") || order.status !== "Awaiting Payment") {
+    return { ok: false, status: 400, error: "This order isn't an unpaid Zelle or Bitcoin order — nothing to mark paid." };
+  }
+
+  // Claim the order first, atomically: the UPDATE only matches while it's
+  // still "Awaiting Payment", so if two requests race (a webhook delivered
+  // twice, or a webhook plus a staff click) only one gets past this point and
+  // stock can never be decremented twice. Reverted below if stock can't be
+  // taken.
+  // This is what makes the order take the same time to fulfill as any other
+  // — it drops into the same Processing → Shipped → Delivered timeline.
+  const claim: Record<string, unknown> = { status: "Processing" };
+  if (order.payment_method === "zelle" && markedPaidBy) claim.zelle_marked_paid_by = markedPaidBy;
+
+  const { data: claimed, error: claimError } = await admin
+    .from("orders")
+    .update(claim)
+    .eq("id", order.id)
+    .eq("status", "Awaiting Payment")
+    .select("id");
+
+  if (claimError) {
+    return { ok: false, status: 500, error: claimError.message };
+  }
+  if (!claimed || claimed.length === 0) {
+    return { ok: false, status: 409, error: "This order was already marked paid." };
   }
 
   // Resolve each line's real product_variants row the same way the old
@@ -75,6 +117,10 @@ export async function finalizeZellePayment(
     });
     if (decrementError) {
       console.error("finalizeZellePayment: stock decrement failed", order.id, decrementError.message);
+      await admin
+        .from("orders")
+        .update({ status: "Awaiting Payment", ...(order.payment_method === "zelle" ? { zelle_marked_paid_by: null } : {}) })
+        .eq("id", order.id);
       return {
         ok: false,
         status: 409,
@@ -90,18 +136,6 @@ export async function finalizeZellePayment(
   // actually been checked against real Zelle activity (the customer's own
   // "I've Sent My Zelle Payment" button reaches this exact same code with
   // zero verification — that's the whole point of it being self-service).
-
-  // This is what makes a Zelle order take the same amount of time to
-  // fulfill as any other order — it drops into the exact same
-  // Processing → Shipped → Delivered timeline, no special "Zelle queue".
-  const { error: updateError } = await admin
-    .from("orders")
-    .update({ status: "Processing", zelle_marked_paid_by: markedPaidBy })
-    .eq("id", order.id);
-
-  if (updateError) {
-    return { ok: false, status: 500, error: updateError.message };
-  }
 
   if (order.shipping_email) {
     await sendOrderConfirmationEmail({
@@ -138,7 +172,7 @@ export async function finalizeZellePayment(
 // used to happen too early). Card/Whop orders don't need this: their points
 // are already awarded at real, webhook-verified payment time in
 // src/app/api/webhooks/whop/route.ts, so this function is a no-op for
-// anything that isn't payment_method === "zelle".
+// anything that isn't a Zelle or Bitcoin order (both are awarded here, at ship time, after payment is verified).
 //
 // Safe to call on every Shipped transition, including ones that aren't the
 // very first — callers are expected to already guard with
@@ -150,7 +184,7 @@ export async function awardZellePointsOnShip(
   admin: ReturnType<typeof createAdminClient>,
   order: Pick<OrderWithItems, "id" | "order_number" | "user_id" | "payment_method" | "total" | "subtotal">
 ): Promise<void> {
-  if (order.payment_method !== "zelle") return;
+  if (order.payment_method !== "zelle" && order.payment_method !== "bitcoin") return;
 
   const pointsEarned = Math.floor(order.total ?? order.subtotal);
   if (pointsEarned <= 0) return;

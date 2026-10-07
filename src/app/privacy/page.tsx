@@ -27,8 +27,12 @@ export default function PrivacyPolicyPage() {
         <p>
           <strong>Order information:</strong> your name, shipping address, email, the items you
           order, order totals, and any discount or affiliate code you use. We accept payment by
-          Zelle, and we see only the payment details Zelle provides us (such as the sender name
-          and the payment note). We do not collect or store card or bank account numbers.
+          Zelle and by Bitcoin. For Zelle, we see only the payment details Zelle provides us (such
+          as the sender name and the payment note). For Bitcoin, payment is handled through a
+          BTCPay Server payment page, and we receive only the order&apos;s payment status and the
+          public blockchain transaction details — never your wallet&apos;s private keys. Bitcoin
+          transactions are recorded on a public blockchain, which we do not control. We do not
+          collect or store card or bank account numbers.
         </p>
         <p>
           <strong>Affiliate applications and support messages:</strong> the details you submit

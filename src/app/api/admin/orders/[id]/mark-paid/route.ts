@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { OrderWithItems } from "@/types/database";
-import { finalizeZellePayment } from "@/lib/orders/finalizeZellePayment";
+import { finalizeOrderPayment } from "@/lib/orders/finalizeZellePayment";
 
 // POST /api/admin/orders/[id]/mark-paid — staff's manual override for a
-// Zelle order, used after checking the business's Zelle activity for a
+// Zelle order (or a Bitcoin order whose webhook never arrived — normally
+// Bitcoin orders finalize themselves), used after checking the business's Zelle activity for a
 // payment whose note contains this order's number, for the right amount
 // (shown right on the order row). No time limit, unlike the customer's own
 // "I've Sent My Zelle Payment" button (src/app/api/orders/[id]/mark-paid) —
@@ -48,7 +49,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return NextResponse.json({ error: "Order not found." }, { status: 404 });
   }
 
-  const result = await finalizeZellePayment(admin, order, "staff");
+  const result = await finalizeOrderPayment(admin, order, "staff");
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }

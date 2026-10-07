@@ -62,7 +62,42 @@ export default async function OrdersPage() {
                 </div>
               </div>
 
-              {order.status === "Awaiting Payment" ? (
+              {order.status === "Awaiting Payment" && order.payment_method === "bitcoin" ? (
+                <div
+                  style={{
+                    background: "#fff7ed",
+                    border: "1px solid #fdba74",
+                    borderRadius: 10,
+                    padding: 16,
+                    margin: "18px 0",
+                  }}
+                >
+                  <p style={{ margin: "0 0 6px", fontWeight: 800, color: "#c2540c" }}>
+                    Awaiting your Bitcoin payment
+                  </p>
+                  <p style={{ margin: "0 0 10px", fontSize: 14 }}>
+                    Amount due:{" "}
+                    <strong>${((order.total ?? order.subtotal) + order.shipping_fee).toFixed(2)}</strong>. Your
+                    order updates on its own as soon as the payment confirms — nothing else to do after you pay.
+                  </p>
+                  {order.btcpay_checkout_url && (
+                    <a
+                      className="btn"
+                      href={order.btcpay_checkout_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ display: "inline-block", textDecoration: "none" }}
+                    >
+                      Pay with Bitcoin →
+                    </a>
+                  )}
+                  <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--muted)" }}>
+                    Bitcoin invoices expire after 60 minutes. If it expires before you pay, the order is
+                    removed and you can simply check out again. Already paid and still seeing this? Email
+                    info@shoprealaminos.com with your order number.
+                  </p>
+                </div>
+              ) : order.status === "Awaiting Payment" ? (
                 <div
                   style={{
                     background: "#fef2f2",
