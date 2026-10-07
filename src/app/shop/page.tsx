@@ -21,14 +21,12 @@ export default async function ShopPage({ searchParams }: { searchParams: { categ
 
   if (error) {
     return (
-      <div className="dark-page">
-        <main className="site-main">
-          <div className="wrap" style={{ color: "#e9edf4" }}>
-            <h1>Shop</h1>
-            <p className="error">Could not load products: {error.message}</p>
-          </div>
-        </main>
-      </div>
+      <main className="site-main">
+        <div className="wrap">
+          <h1>Shop</h1>
+          <p className="error">Could not load products: {error.message}</p>
+        </div>
+      </main>
     );
   }
 
@@ -50,7 +48,7 @@ export default async function ShopPage({ searchParams }: { searchParams: { categ
   });
 
   return (
-    <div className="dark-page">
+    <>
       <main className="site-main">
         <div className="shop-hero">
           <div className="hx-pill">
@@ -103,6 +101,6 @@ export default async function ShopPage({ searchParams }: { searchParams: { categ
           ))}
         </div>
       </main>
-    </div>
+    </>
   );
 }

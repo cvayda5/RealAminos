@@ -75,7 +75,7 @@ export default async function PointsPage() {
                       {new Date(t.created_at).toLocaleDateString()}
                     </td>
                     <td>{t.description ?? (t.type === "earned" ? "Points earned" : "Points redeemed")}</td>
-                    <td style={{ color: t.points > 0 ? "#059669" : "#b91c1c", fontWeight: 700 }}>
+                    <td style={{ color: t.points > 0 ? "var(--ok)" : "var(--danger)", fontWeight: 700 }}>
                       {t.points > 0 ? `+${t.points}` : t.points}
                     </td>
                   </tr>

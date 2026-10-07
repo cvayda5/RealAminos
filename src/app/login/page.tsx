@@ -178,7 +178,7 @@ function LoginForm() {
                 : "Resend code"}
             </button>
             {resendMessage && (
-              <p style={{ color: "#047857", fontSize: 13, marginTop: 8 }}>{resendMessage}</p>
+              <p style={{ color: "var(--ok)", fontSize: 13, marginTop: 8 }}>{resendMessage}</p>
             )}
           </div>
         </div>

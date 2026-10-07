@@ -50,7 +50,6 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
   };
 
   return (
-    <div className="dark-page">
     <main className="site-main">
       <script
         type="application/ld+json"
@@ -181,6 +180,5 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         </div>
       </div>
     </main>
-    </div>
   );
 }

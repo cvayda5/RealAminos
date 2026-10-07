@@ -65,14 +65,14 @@ export default async function OrdersPage() {
               {order.status === "Awaiting Payment" && order.payment_method === "bitcoin" ? (
                 <div
                   style={{
-                    background: "#fff7ed",
-                    border: "1px solid #fdba74",
+                    background: "var(--warn-bg)",
+                    border: "1px solid var(--warn-line)",
                     borderRadius: 10,
                     padding: 16,
                     margin: "18px 0",
                   }}
                 >
-                  <p style={{ margin: "0 0 6px", fontWeight: 800, color: "#c2540c" }}>
+                  <p style={{ margin: "0 0 6px", fontWeight: 800, color: "var(--orange-dark)" }}>
                     Awaiting your Bitcoin payment
                   </p>
                   <p style={{ margin: "0 0 10px", fontSize: 14 }}>
@@ -100,8 +100,8 @@ export default async function OrdersPage() {
               ) : order.status === "Awaiting Payment" ? (
                 <div
                   style={{
-                    background: "#fef2f2",
-                    border: "1px solid #fecaca",
+                    background: "var(--danger-bg)",
+                    border: "1px solid var(--danger-line)",
                     borderRadius: 10,
                     padding: 16,
                     margin: "18px 0",
@@ -119,7 +119,7 @@ export default async function OrdersPage() {
                     style={{ borderRadius: 8, background: "#fff", padding: 6 }}
                   />
                   <div style={{ flex: 1, minWidth: 220 }}>
-                    <p style={{ margin: "0 0 6px", fontWeight: 800, color: "#b91c1c" }}>
+                    <p style={{ margin: "0 0 6px", fontWeight: 800, color: "var(--danger)" }}>
                       Awaiting your Zelle payment
                     </p>
                     <p style={{ margin: "0 0 4px", fontSize: 14 }}>
@@ -132,7 +132,7 @@ export default async function OrdersPage() {
                     <p style={{ margin: "0 0 4px", fontSize: 14 }}>
                       You MUST put <strong>{order.order_number}</strong> in the Zelle payment note.
                     </p>
-                    <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#b91c1c" }}>
+                    <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "var(--danger)" }}>
                       Payments sent without the order number in the note will be refunded, not
                       fulfilled.
                     </p>
@@ -194,10 +194,10 @@ export default async function OrdersPage() {
                         <td style={{ border: "none" }}>${order.subtotal.toFixed(2)}</td>
                       </tr>
                       <tr>
-                        <td style={{ border: "none", color: "#059669" }}>
+                        <td style={{ border: "none", color: "var(--ok)" }}>
                           Discount ({order.discount_code}, -{order.discount_percent}%)
                         </td>
-                        <td style={{ border: "none", color: "#059669" }}>
+                        <td style={{ border: "none", color: "var(--ok)" }}>
                           -${(order.subtotal - (order.total ?? order.subtotal)).toFixed(2)}
                         </td>
                       </tr>
@@ -211,8 +211,8 @@ export default async function OrdersPage() {
                   </tr>
                   {order.payment_method === "zelle" && order.zelle_discount_amount > 0 && (
                     <tr>
-                      <td style={{ border: "none", color: "#059669" }}>Zelle discount (-5%)</td>
-                      <td style={{ border: "none", color: "#059669" }}>
+                      <td style={{ border: "none", color: "var(--ok)" }}>Zelle discount (-5%)</td>
+                      <td style={{ border: "none", color: "var(--ok)" }}>
                         -${order.zelle_discount_amount.toFixed(2)}
                       </td>
                     </tr>

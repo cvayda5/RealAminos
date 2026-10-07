@@ -561,6 +561,7 @@ html.force-mobile .gate-card{ padding:26px 20px; }
 .tier-each{ font-size:11px; color:var(--muted); white-space:nowrap; }
 @media (max-width:560px){ .tier-grid{ grid-template-columns:repeat(2,1fr); row-gap:16px; } }
 
+
 /* =====================================================================
    THEME C — "premium dark editorial" refresh (cosmetic only)
    Same palette + logo; new type, header, footer, buttons, home, shop and
@@ -588,7 +589,7 @@ html,body{ font-family:var(--sans); }
 header.site{ background:rgba(7,9,13,.95); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border-bottom:1px solid rgba(255,255,255,.08); }
 .nav-wrap{ max-width:1320px; padding:12px 28px; }
 .logo{ color:#fff; letter-spacing:-.04em; font-size:22px; }
-.logo .mark{ width:34px; height:34px; border-radius:10px; font-size:16px; letter-spacing:-.05em; box-shadow:0 0 24px rgba(249,115,22,.45); }
+.logo .mark{ background:linear-gradient(135deg,#f97316,#c2540c); color:#fff; width:34px; height:34px; border-radius:10px; font-size:16px; letter-spacing:-.05em; box-shadow:0 0 24px rgba(249,115,22,.45); }
 .logo .name{ color:#fff; }
 .logo .name span{ color:var(--orange); }
 nav.primary{ gap:2px; flex-wrap:nowrap; }
@@ -614,8 +615,8 @@ nav.primary a:hover{ color:#fff; background:rgba(255,255,255,.08); border-bottom
 .btn-ghost{ background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.16); box-shadow:none; color:#e9edf4; }
 .btn-ghost:hover{ background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.3); }
 .btn-dark, .btn-outline{ box-shadow:none; }
-.btn-dark{ background:var(--ink); }
-.btn-dark:hover{ background:#000; }
+.btn-dark{ background:#1f2937; border:1px solid rgba(255,255,255,.12); }
+.btn-dark:hover{ background:#2a3647; }
 
 /* ---------- footer ---------- */
 footer.site{ background:#05070b; border-top:1px solid rgba(255,255,255,.08); margin-top:0; padding:64px 28px 30px; }
@@ -731,7 +732,7 @@ footer.site{ background:#05070b; border-top:1px solid rgba(255,255,255,.08); mar
 .chip-row{ display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin-top:42px; }
 .dark-page .chip{ border:1px solid var(--dk-line); background:var(--dk-card); color:#b7c0cf; padding:11px 20px; border-radius:999px; font-size:13px; font-weight:500; }
 .dark-page .chip:hover{ border-color:rgba(249,115,22,.5); color:#fff; }
-.dark-page .chip.active{ background:#fff; color:var(--ink); border-color:#fff; font-weight:600; }
+.dark-page .chip.active{ background:#fff; color:#111827; border-color:#fff; font-weight:600; }
 .bulk-strip{ display:grid; grid-template-columns:repeat(4,1fr); margin-top:30px; border:1px solid var(--dk-line); border-radius:22px; background:var(--dk-card); overflow:hidden; }
 .bulk-strip > div{ padding:20px 26px; border-right:1px solid var(--dk-line); }
 .bulk-strip > div:last-child{ border-right:0; background:linear-gradient(135deg,rgba(249,115,22,.26),transparent); }
@@ -897,3 +898,119 @@ html.force-mobile .dark-page .ruo-banner{ flex-direction:column; align-items:fle
 html.force-mobile .dark-page .pd-visual{ height:400px; }
 html.force-mobile .dark-page .pd-title{ font-size:32px; }
 html.force-mobile .dark-page .pd-layout{ gap:32px; }
+
+/* =====================================================================
+   THEME C — site-wide dark surfaces
+   The whole site now lives inside .dark-page (see layout.tsx), so the
+   shared building blocks every page uses (cards, forms, tables, status
+   badges, policy pages, account/admin screens, cart drawer, age gate) get
+   the same dark treatment. Colors only — no layout or logic changes.
+   ===================================================================== */
+:root{
+  color-scheme:dark;
+  --paper:#0e131b;
+  --paper-2:#0a0e14;
+  --line:rgba(255,255,255,.10);
+  --muted:#8b94a5;
+  --ink:#f3f5f9;
+  --ink-2:#d5dbe6;
+  --orange-light:rgba(249,115,22,.14);
+  --orange-dark:#fb923c;
+  --ok:#34d399;
+  --danger:#f87171;
+  --danger-bg:rgba(248,113,113,.12);
+  --danger-line:rgba(248,113,113,.38);
+  --warn-bg:rgba(249,115,22,.10);
+  --warn-line:rgba(249,115,22,.38);
+  --warn-text:#f3c9a6;
+}
+html,body{ background:#07090d; color:#e9edf4; }
+::selection{ background:rgba(249,115,22,.38); color:#fff; }
+.dark-page{ min-height:70vh; }
+/* :where() keeps these at zero specificity so the page-specific headline rules above still win */
+:where(.dark-page) :is(h1,h2,h3,h4){ color:#fff; letter-spacing:-.03em; }
+:where(.dark-page) h1{ font-weight:600; }
+
+/* generic building blocks */
+.card{ background:var(--paper); border:1px solid var(--line); border-radius:22px; }
+input, select, textarea{ font-family:inherit; }
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea{
+  background:rgba(255,255,255,.05); color:#fff; border:1px solid var(--line); border-radius:12px;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus, select:focus, textarea:focus{
+  outline:none; border-color:rgba(249,115,22,.7); box-shadow:0 0 0 3px rgba(249,115,22,.18);
+}
+input::placeholder, textarea::placeholder{ color:#667084; }
+select option{ background:#0e131b; color:#fff; }
+input[type="checkbox"], input[type="radio"]{ accent-color:var(--orange); }
+input:-webkit-autofill{ -webkit-box-shadow:0 0 0 100px #131a25 inset; -webkit-text-fill-color:#fff; caret-color:#fff; }
+input:disabled, select:disabled, textarea:disabled{ opacity:.55; }
+.error{ color:var(--danger); }
+.notice, .admin-note, .label-bought{ background:var(--warn-bg); border-color:var(--warn-line); color:var(--warn-text); }
+.label-bought a{ color:var(--orange-dark); }
+.btn-outline{ border:1.5px solid rgba(255,255,255,.22); color:#e9edf4; border-radius:999px; }
+.btn-outline:hover{ background:#fff; color:#111827; border-color:#fff; }
+.admin-save{ background:rgba(255,255,255,.10); border:1px solid var(--line); color:#fff; }
+.admin-save:hover{ background:var(--orange); border-color:var(--orange); }
+.report-filter-btn.active{ background:var(--orange); border-color:var(--orange); color:#fff; }
+.admin-select, .admin-track-input{ background:rgba(255,255,255,.05); }
+.toast{ background:#1c2430; border:1px solid var(--line); box-shadow:0 12px 40px rgba(0,0,0,.5); }
+
+/* cards / sections that used light panels */
+.trust-card, .step-card{ background:var(--dk-card); border:1px solid var(--dk-line); border-radius:22px; }
+.trust-card .ic, .step-card .num{ background:var(--orange-light); color:var(--orange-dark); border-radius:12px; }
+.trust-card p, .step-card p{ color:var(--dk-mut); }
+.dark-page .section-head h2{ font-size:30px; }
+.dark-page .section-head{ margin-bottom:28px; }
+.dark-page .section-head + .product-grid{ margin-top:12px; }
+.lab-hero{ background:linear-gradient(160deg,rgba(249,115,22,.16),rgba(255,255,255,.03) 60%), var(--paper); border:1px solid var(--dk-line); border-radius:28px; color:#fff; }
+.lab-hero h2{ color:#fff; letter-spacing:-.03em; }
+.lab-hero p{ color:#aab4c4; }
+.coa-search input{ background:rgba(255,255,255,.08); color:#fff; border:1px solid var(--line); }
+.founder-card, .coa-search{ border-radius:20px; }
+.coa-product-item{ border-radius:18px; }
+.coa-product-item:hover, .coa-product-item.active{ border-color:var(--orange); }
+.coa-detail{ background:var(--paper); border-color:var(--dk-line); border-radius:24px; }
+.coa-detail-close{ color:#d5dbe6; }
+.faq-item{ border-bottom-color:var(--dk-line); }
+.faq-q{ color:#fff; }
+.legal-body{ color:#c3ccda; }
+.legal-body h3{ color:#fff; }
+.legal-body a, .dark-page .wrap a:not(.btn):not(.btn-outline){ color:var(--orange-dark); }
+
+/* tables / account / admin */
+table{ color:#d5dbe6; }
+th, td{ border-bottom-color:var(--dk-line); }
+.admin-table-wrap{ border-radius:20px; background:var(--paper); }
+table.admin-table th{ background:rgba(255,255,255,.04); }
+.admin-lock{ border-radius:24px; }
+.status-processing{ background:rgba(249,115,22,.14); color:#fb923c; border:1px solid rgba(249,115,22,.4); }
+.status-shipped{ background:rgba(96,165,250,.14); color:#93c5fd; border:1px solid rgba(96,165,250,.4); }
+.status-delivered{ background:rgba(52,211,153,.14); color:#6ee7b7; border:1px solid rgba(52,211,153,.4); }
+.status-awaiting-payment{ background:rgba(248,113,113,.14); color:#fca5a5; border:1px solid rgba(248,113,113,.4); }
+.tracking-no{ background:rgba(255,255,255,.04); border-color:rgba(255,255,255,.16); }
+
+/* cart drawer, payment options, toast */
+.overlay{ background:rgba(3,5,8,.68); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); }
+.drawer{ background:#0b0f16; color:#e9edf4; border-left:1px solid var(--dk-line); box-shadow:-12px 0 50px rgba(0,0,0,.65); }
+.drawer-head h3{ color:#fff; letter-spacing:-.02em; }
+.drawer-close{ color:var(--muted); }
+.drawer-close:hover{ color:#fff; }
+.discount-applied{ background:rgba(52,211,153,.10); border-color:rgba(52,211,153,.35); color:#6ee7b7; }
+.payment-option{ background:var(--dk-card); border-radius:16px !important; transition:background .15s; }
+.payment-option.selected{ background:rgba(249,115,22,.10); }
+.empty-cart{ color:var(--muted); }
+
+/* age gate */
+.gate{ background:radial-gradient(800px 560px at 12% -6%, rgba(249,115,22,.20), transparent 65%), #07090d; }
+.gate-card{ background:#0e131b; border:1px solid var(--dk-line); border-radius:28px; box-shadow:0 30px 80px rgba(0,0,0,.6); }
+.gate-card h2{ color:#fff; }
+.gate-check-item{ border-radius:16px; }
+.gate-check-item:hover{ border-color:rgba(249,115,22,.5); }
+.gate-check-item.is-checked{ border-color:rgba(249,115,22,.55); color:#fff; }
+.gate-eyebrow{ letter-spacing:.16em; font-weight:600; }
+
+/* leftover countdown/promo (unused today, kept consistent if re-enabled) */
+.launch-countdown{ background:linear-gradient(135deg,#0b0f16,#141b27); border-bottom:1px solid var(--dk-line); }
+.launch-countdown-live{ background:linear-gradient(135deg,#f97316,#c2540c); }
+.launch-countdown-cta{ background:#fff; color:#c2540c; }

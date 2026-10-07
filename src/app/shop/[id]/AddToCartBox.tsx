@@ -101,7 +101,7 @@ export default function AddToCartBox({ product }: { product: ProductWithVariants
             <span style={{ textDecoration: "line-through", color: "var(--muted)", fontSize: 16, marginRight: 8 }}>
               ${getSitePriceDisplay(variant).original.toFixed(2)}
             </span>
-            <span style={{ color: "#059669" }}>${getSitePriceDisplay(variant).sale.toFixed(2)}</span>
+            <span style={{ color: "var(--ok)" }}>${getSitePriceDisplay(variant).sale.toFixed(2)}</span>
           </>
         ) : (
           `$${variant ? variant.price.toFixed(2) : "0.00"}`
@@ -145,7 +145,7 @@ export default function AddToCartBox({ product }: { product: ProductWithVariants
             })}
           </div>
           {bulkPercent > 0 && (
-            <p style={{ margin: "8px 0 0", fontSize: 13, color: "#059669", fontWeight: 700 }}>
+            <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--ok)", fontWeight: 700 }}>
               {bulkPercent}% bulk discount — ${bulkUnitPrice(variant.price, qty).toFixed(2)} per unit ($
               {(variant.price * qty - bulkUnitPrice(variant.price, qty) * qty).toFixed(2)} saved)
             </p>
@@ -159,9 +159,9 @@ export default function AddToCartBox({ product }: { product: ProductWithVariants
             marginTop: 14,
             padding: "12px 14px",
             borderRadius: 10,
-            background: "#fff7ed",
-            border: "1px solid #fdba74",
-            color: "#7c2d12",
+            background: "var(--warn-bg)",
+            border: "1px solid var(--warn-line)",
+            color: "var(--warn-text)",
             fontSize: 13.5,
             fontWeight: 600,
           }}

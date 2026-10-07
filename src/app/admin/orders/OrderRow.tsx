@@ -134,12 +134,12 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
       <td>
         <strong>{order.order_number}</strong>
         {isZelle && (
-          <div style={{ fontSize: 10.5, fontWeight: 800, color: "#c2540c", letterSpacing: ".03em", marginTop: 2 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 800, color: "var(--orange-dark)", letterSpacing: ".03em", marginTop: 2 }}>
             ZELLE
           </div>
         )}
         {isBitcoin && (
-          <div style={{ fontSize: 10.5, fontWeight: 800, color: "#c2540c", letterSpacing: ".03em", marginTop: 2 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 800, color: "var(--orange-dark)", letterSpacing: ".03em", marginTop: 2 }}>
             BITCOIN
           </div>
         )}
@@ -180,31 +180,31 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
         )}
         <strong>${grandTotal.toFixed(2)}</strong>
         {hasDiscount && (
-          <div style={{ fontSize: 11, color: "#059669" }}>
+          <div style={{ fontSize: 11, color: "var(--ok)" }}>
             {order.discount_code} (-{order.discount_percent}%)
           </div>
         )}
         {isZelle && order.zelle_discount_amount > 0 && (
-          <div style={{ fontSize: 11, color: "#059669" }}>Zelle discount (-5%): -${order.zelle_discount_amount.toFixed(2)}</div>
+          <div style={{ fontSize: 11, color: "var(--ok)" }}>Zelle discount (-5%): -${order.zelle_discount_amount.toFixed(2)}</div>
         )}
         <div style={{ fontSize: 11, color: "var(--muted)" }}>
           Shipping: {order.shipping_fee > 0 ? `$${order.shipping_fee.toFixed(2)}` : "Free"}
         </div>
         {order.points_redeemed > 0 && (
-          <div style={{ fontSize: 11, color: "#059669" }}>Redeemed — {order.points_redeemed} pts</div>
+          <div style={{ fontSize: 11, color: "var(--ok)" }}>Redeemed — {order.points_redeemed} pts</div>
         )}
         {isAwaitingPayment && isZelle && (
-          <div style={{ fontSize: 11, fontWeight: 800, color: "#b91c1c", marginTop: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: "var(--danger)", marginTop: 4 }}>
             Verify note says {order.order_number} before marking paid
           </div>
         )}
         {isAwaitingPayment && isBitcoin && (
-          <div style={{ fontSize: 11, fontWeight: 800, color: "#b91c1c", marginTop: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: "var(--danger)", marginTop: 4 }}>
             Bitcoin confirms automatically — only use Mark Paid after verifying the invoice is settled in BTCPay
           </div>
         )}
         {order.status === "Processing" && order.zelle_marked_paid_by === "customer" && (
-          <div style={{ fontSize: 11, fontWeight: 800, color: "#b91c1c", marginTop: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: "var(--danger)", marginTop: 4 }}>
             Customer self-confirmed — verify Zelle before shipping
           </div>
         )}
@@ -313,14 +313,14 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
         {!confirmingDelete ? (
           <button
             className="btn-outline"
-            style={{ fontSize: 11.5, padding: "6px 10px", borderColor: "#b91c1c", color: "#b91c1c" }}
+            style={{ fontSize: 11.5, padding: "6px 10px", borderColor: "var(--danger)", color: "var(--danger)" }}
             onClick={() => setConfirmingDelete(true)}
           >
             Delete
           </button>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6, maxWidth: 150 }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: "#b91c1c" }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: "var(--danger)" }}>
               Delete {order.order_number}? Can&apos;t be undone — stock and any purchased label
               aren&apos;t reversed.
             </span>

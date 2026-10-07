@@ -106,7 +106,7 @@ export default function SignupPage() {
             </button>
 
             {resendMessage && (
-              <p style={{ color: "#047857", fontSize: 13, marginTop: 10 }}>{resendMessage}</p>
+              <p style={{ color: "var(--ok)", fontSize: 13, marginTop: 10 }}>{resendMessage}</p>
             )}
             {error && <p className="error">{error}</p>}
 

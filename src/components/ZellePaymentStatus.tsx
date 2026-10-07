@@ -71,7 +71,7 @@ export default function ZellePaymentStatus({ orderId, createdAt, onPaid }: Props
 
   if (done) {
     return (
-      <p style={{ margin: "10px 0 0", fontSize: 13, fontWeight: 700, color: "#059669" }}>
+      <p style={{ margin: "10px 0 0", fontSize: 13, fontWeight: 700, color: "var(--ok)" }}>
         ✓ Payment confirmed — this order is now processing.
       </p>
     );
@@ -85,7 +85,7 @@ export default function ZellePaymentStatus({ orderId, createdAt, onPaid }: Props
           the button below — that&apos;s what actually confirms your order.
         </p>
       ) : (
-        <p style={{ margin: "0 0 8px", fontSize: 12.5, fontWeight: 700, color: "#b91c1c" }}>
+        <p style={{ margin: "0 0 8px", fontSize: 12.5, fontWeight: 700, color: "var(--danger)" }}>
           The 20-minute window to confirm this payment has passed. If you already sent it, email{" "}
           <strong>info@shoprealaminos.com</strong> with your order number and we&apos;ll sort it
           out.

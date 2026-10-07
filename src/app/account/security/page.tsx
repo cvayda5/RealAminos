@@ -86,7 +86,7 @@ export default function SecurityPage() {
           </>
         )}
 
-        {status && <p style={{ color: "#047857", fontSize: 13.5 }}>{status}</p>}
+        {status && <p style={{ color: "var(--ok)", fontSize: 13.5 }}>{status}</p>}
         {error && <p className="error">{error}</p>}
       </div>
     </div>

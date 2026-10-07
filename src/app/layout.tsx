@@ -139,7 +139,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <CartProvider>
           <SiteGate />
           <SiteHeader userEmail={user?.email ?? null} />
-          {children}
+          {/* Every page renders inside .dark-page — the site-wide dark theme
+              surface (background glows + text color) defined in globals.css. */}
+          <div className="dark-page">{children}</div>
           <SiteFooter />
           <CartDrawer />
         </CartProvider>

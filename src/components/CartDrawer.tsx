@@ -377,7 +377,7 @@ export default function CartDrawer() {
                       {!item.isReward && !item.pointTransactionId && getBulkPercent(item.qty) > 0 && (
                         <>
                           <br />
-                          <span style={{ color: "#059669", fontWeight: 700 }}>
+                          <span style={{ color: "var(--ok)", fontWeight: 700 }}>
                             {getBulkPercent(item.qty)}% bulk discount applied
                           </span>
                         </>
@@ -385,7 +385,7 @@ export default function CartDrawer() {
                       {item.isReward && (
                         <>
                           <br />
-                          <span style={{ color: "#059669" }}>Redeemed with {item.pointsCost} points</span>
+                          <span style={{ color: "var(--ok)" }}>Redeemed with {item.pointsCost} points</span>
                         </>
                       )}
                       <br />
@@ -448,7 +448,7 @@ export default function CartDrawer() {
                   <span>{money(subtotal)}</span>
                 </div>
                 {appliedDiscount && codeDiscountAmount > 0 && (
-                  <div className="subtotal-row" style={{ color: "#059669" }}>
+                  <div className="subtotal-row" style={{ color: "var(--ok)" }}>
                     <span>Code {appliedDiscount.code}</span>
                     <span>-{money(codeDiscountAmount)}</span>
                   </div>
@@ -575,14 +575,14 @@ export default function CartDrawer() {
                 <span>{money(subtotal)}</span>
               </div>
               {appliedDiscount && codeDiscountAmount > 0 && (
-                <div className="subtotal-row" style={{ color: "#059669" }}>
+                <div className="subtotal-row" style={{ color: "var(--ok)" }}>
                   <span>Code {appliedDiscount.code}</span>
                   <span>-{money(codeDiscountAmount)}</span>
                 </div>
               )}
               <div className="subtotal-row">
                 <span>Shipping{!shipping.state.trim() && " (enter state below)"}</span>
-                <span style={shippingFee === 0 ? { color: "#059669", fontWeight: 700 } : undefined}>
+                <span style={shippingFee === 0 ? { color: "var(--ok)", fontWeight: 700 } : undefined}>
                   {shippingFee === 0 ? "FREE" : money(shippingFee)}
                 </span>
               </div>
@@ -633,7 +633,7 @@ export default function CartDrawer() {
                 }}
               >
                 <strong>🏦 Zelle</strong>{" "}
-                <span style={{ color: "#059669", fontWeight: 700, fontSize: 12.5 }}>Save {ZELLE_DISCOUNT_PERCENT}%</span>
+                <span style={{ color: "var(--ok)", fontWeight: 700, fontSize: 12.5 }}>Save {ZELLE_DISCOUNT_PERCENT}%</span>
                 <div style={{ fontSize: 12.5, color: "var(--muted)" }}>
                   {money(grandTotal * (1 - ZELLE_DISCOUNT_PERCENT / 100))} — manual payment, confirmed by staff
                 </div>
@@ -661,8 +661,8 @@ export default function CartDrawer() {
               {paymentMethod === "bitcoin" && (
                 <div
                   style={{
-                    background: "#fff7ed",
-                    border: "1px solid #fdba74",
+                    background: "var(--warn-bg)",
+                    border: "1px solid var(--warn-line)",
                     borderRadius: 10,
                     padding: 14,
                     marginTop: 4,
@@ -719,8 +719,8 @@ export default function CartDrawer() {
               {paymentMethod === "zelle" && (
                 <div
                   style={{
-                    background: "#fff7ed",
-                    border: "1px solid #fdba74",
+                    background: "var(--warn-bg)",
+                    border: "1px solid var(--warn-line)",
                     borderRadius: 10,
                     padding: 14,
                     marginTop: 4,
@@ -751,7 +751,7 @@ export default function CartDrawer() {
                       <p style={{ margin: "10px 0 0", fontSize: 12.5, color: "var(--ink-2)" }}>
                         Using phone? Zelle to the email <strong>info@shoprealaminos.com</strong>.
                       </p>
-                      <p style={{ margin: "10px 0 0", fontSize: 12.5, fontWeight: 800, color: "#b91c1c" }}>
+                      <p style={{ margin: "10px 0 0", fontSize: 12.5, fontWeight: 800, color: "var(--danger)" }}>
                         You MUST put {zelleOrder.orderNumber} in the Zelle payment note, or your payment
                         will be refunded instead of fulfilled.
                       </p>

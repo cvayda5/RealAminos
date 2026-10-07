@@ -96,7 +96,7 @@ export default function DiscountCodeRow({ discountCode }: { discountCode: Discou
           </button>
           <button
             className="admin-save"
-            style={{ background: "#fee2e2", color: "#991b1b" }}
+            style={{ background: "var(--danger-bg)", color: "var(--danger)" }}
             onClick={remove}
             disabled={saving || deleting}
           >

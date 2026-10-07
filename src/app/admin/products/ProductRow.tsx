@@ -97,7 +97,7 @@ export default function ProductRow({
               width: 52,
               height: 52,
               borderRadius: 8,
-              background: "linear-gradient(135deg,#fff7ed,#ffedd5)",
+              background: "var(--paper-2)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -181,7 +181,7 @@ export default function ProductRow({
       <td>
         <button
           className="admin-save"
-          style={{ background: "#fee2e2", color: "#991b1b" }}
+          style={{ background: "var(--danger-bg)", color: "var(--danger)" }}
           onClick={remove}
           disabled={saving || deleting || uploading}
         >

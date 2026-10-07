@@ -26,7 +26,7 @@ export default async function Home() {
   const fanOrder = [3, 1, 0, 2, 4].filter((i) => i < withPhotos.length);
 
   return (
-    <div className="dark-page">
+    <>
       <section className="hx">
         <div className="hx-pill">
           <i /> Third-Party Tested &nbsp;·&nbsp; &gt;99% Purity
@@ -153,6 +153,6 @@ export default async function Home() {
           </div>
         </section>
       </main>
-    </div>
+    </>
   );
 }
