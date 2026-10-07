@@ -255,6 +255,26 @@ export default function CartDrawer() {
       amountDue: body.amountDue,
       createdAt: body.createdAt,
     });
+
+    // Google Ads conversion: "Purchase". The Google tag itself (gtag.js,
+    // AW-16694066039) is loaded on every page by the root layout, so this
+    // only reports the event. Fires once, right when the order is created
+    // (checkout happens in this drawer, so there's no separate thank-you
+    // page to put the snippet on). transaction_id = the order number, which
+    // lets Google ignore a duplicate report of the same order. NOTE: the
+    // order exists before staff confirm the Zelle payment, so this counts
+    // orders placed, not orders paid.
+    try {
+      const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
+      gtag?.("event", "conversion", {
+        send_to: "AW-16694066039/i4JnCMnu5pMdEPf2rJg-",
+        value: Number(body.amountDue) || 0,
+        currency: "USD",
+        transaction_id: String(body.orderNumber ?? ""),
+      });
+    } catch {
+      // Tracking must never get in the way of a successful order.
+    }
     // The order is now real (unpaid, but real — any redeemed reward points
     // are already spent/linked to it) — clear the cart rather than leaving
     // these items sitting in the drawer looking like they still need
