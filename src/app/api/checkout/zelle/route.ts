@@ -5,6 +5,7 @@ import type { NewOrderPayload, PointTransaction } from "@/types/database";
 import { calculateShippingFee } from "@/lib/shipping/rate";
 import { resolveVariant } from "@/lib/inventory/resolveVariant";
 import { resolveDiscount } from "@/lib/checkout/resolveDiscount";
+import { bulkUnitPrice } from "@/lib/promotions/bulkPricing";
 import { sendAdminOrderNotification } from "@/lib/email/sendAdminOrderNotification";
 
 // 5% off for choosing Zelle over a card — in exchange for us not getting
@@ -122,7 +123,12 @@ export async function POST(request: Request) {
   const normalizedItems = body.items.map((i) => {
     if (i.pointTransactionId) return { ...i, unitPrice: 0 };
     const lineKey = i.pointTransactionId ?? `${i.productId}::${i.size}`;
-    return { ...i, unitPrice: realUnitPriceByLine.get(lineKey) ?? i.unitPrice };
+    // The variant's real database price, then the quantity (bulk) discount
+    // for this line's qty — recomputed here from scratch so the charged
+    // price never depends on anything the browser sent. Same function the
+    // cart uses to show the customer their price (lib/promotions/bulkPricing.ts).
+    const basePrice = realUnitPriceByLine.get(lineKey) ?? i.unitPrice;
+    return { ...i, unitPrice: bulkUnitPrice(basePrice, i.qty) };
   });
 
   const subtotal = normalizedItems.reduce((sum, i) => sum + i.unitPrice * i.qty, 0);

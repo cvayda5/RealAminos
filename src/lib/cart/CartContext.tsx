@@ -7,6 +7,7 @@
 // browser storage is the normal, correct choice here).
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { CartLine } from "@/types/database";
+import { bulkLineTotal } from "@/lib/promotions/bulkPricing";
 
 interface CartContextValue {
   items: CartLine[];
@@ -101,7 +102,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   }
 
-  const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.qty, 0);
+  // Each paid line is priced with the quantity (bulk) discount for its
+  // current qty — see lib/promotions/bulkPricing.ts. Reward lines (redeemed
+  // with points) are free and never discounted. The tier is computed from the
+  // merged line's qty, so adding more of the same size from the cart or
+  // another visit still reaches the next tier.
+  const subtotal =
+    Math.round(
+      items.reduce(
+        (sum, i) => sum + (i.isReward || i.pointTransactionId ? i.unitPrice * i.qty : bulkLineTotal(i.unitPrice, i.qty)),
+        0
+      ) * 100
+    ) / 100;
   const count = items.reduce((sum, i) => sum + i.qty, 0);
 
   return (

@@ -4,6 +4,28 @@ import { useState } from "react";
 import { useCart } from "@/lib/cart/CartContext";
 import type { ProductWithVariants } from "@/types/database";
 import { getSitePriceDisplay } from "@/lib/promotions/siteSale";
+import { getBulkPercent, bulkUnitPrice } from "@/lib/promotions/bulkPricing";
+
+// The four quantity-pricing cards. The discount % comes from the one shared
+// tier table (lib/promotions/bulkPricing.ts), so these can never disagree
+// with what the cart and checkout actually charge.
+const TIER_CARDS: { minQty: number; label: string; vials: number; badge?: string; badgeBg?: string }[] = [
+  { minQty: 1, label: "1 UNIT", vials: 1 },
+  { minQty: 2, label: "2 UNITS", vials: 2, badge: "MOST POPULAR", badgeBg: "#0f766e" },
+  { minQty: 3, label: "3+ UNITS", vials: 3, badge: "BEST VALUE", badgeBg: "#f59e0b" },
+  { minQty: 10, label: "10+ UNITS", vials: 3, badge: "VOLUME PRICING", badgeBg: "#111827" },
+];
+
+function Vial() {
+  return (
+    <svg width="22" height="34" viewBox="0 0 22 34" aria-hidden="true">
+      <rect x="6" y="1" width="10" height="5" rx="1.5" fill="#f97316" />
+      <rect x="4.5" y="5.5" width="13" height="3" rx="1" fill="#c2540c" />
+      <rect x="3" y="8" width="16" height="24" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
+      <rect x="3.8" y="17" width="14.4" height="8" fill="#ffedd5" />
+    </svg>
+  );
+}
 
 export default function AddToCartBox({ product }: { product: ProductWithVariants }) {
   const { addItem } = useCart();
@@ -16,6 +38,12 @@ export default function AddToCartBox({ product }: { product: ProductWithVariants
 
   const variant = product.product_variants[selectedIdx];
   const outOfStock = !variant || variant.stock <= 0;
+
+  // Which tier card is highlighted: the highest tier the current quantity
+  // has reached. (A tier you can't reach — more units than are in stock —
+  // is greyed out and unclickable.)
+  const bulkPercent = getBulkPercent(qty);
+  const currentTierMin = [...TIER_CARDS].reverse().find((c) => qty >= c.minQty)?.minQty ?? 1;
 
   function selectVariant(i: number) {
     setSelectedIdx(i);
@@ -80,6 +108,50 @@ export default function AddToCartBox({ product }: { product: ProductWithVariants
         )}{" "}
         <span>per unit, excl. shipping</span>
       </div>
+
+      {!outOfStock && variant && (
+        <>
+          <div className="tier-title">Quantity Pricing</div>
+          <div className="tier-grid">
+            {TIER_CARDS.map((card) => {
+              const percent = getBulkPercent(card.minQty);
+              const selected = card.minQty === currentTierMin;
+              const unavailable = variant.stock < card.minQty;
+              return (
+                <button
+                  key={card.minQty}
+                  type="button"
+                  className={`tier-card ${selected ? "selected" : ""}`}
+                  disabled={unavailable}
+                  onClick={() => setQty(card.minQty)}
+                >
+                  {card.badge && (
+                    <span className="tier-badge" style={{ background: card.badgeBg }}>
+                      {card.badge}
+                    </span>
+                  )}
+                  <span className="tier-vials">
+                    {Array.from({ length: card.vials }).map((_, n) => (
+                      <Vial key={n} />
+                    ))}
+                  </span>
+                  <span className="tier-text">
+                    <b>{card.label}</b>
+                    {percent > 0 && <span className="tier-off">{percent}% OFF</span>}
+                    <span className="tier-each">${bulkUnitPrice(variant.price, card.minQty).toFixed(2)} ea</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {bulkPercent > 0 && (
+            <p style={{ margin: "8px 0 0", fontSize: 13, color: "#059669", fontWeight: 700 }}>
+              {bulkPercent}% bulk discount — ${bulkUnitPrice(variant.price, qty).toFixed(2)} per unit ($
+              {(variant.price * qty - bulkUnitPrice(variant.price, qty) * qty).toFixed(2)} saved)
+            </p>
+          )}
+        </>
+      )}
 
       {outOfStock ? (
         <div

@@ -9,6 +9,7 @@ import type { ShippingDetails } from "@/types/database";
 import { calculateShippingFee, FREE_SHIPPING_THRESHOLD } from "@/lib/shipping/rate";
 import ZellePaymentStatus from "@/components/ZellePaymentStatus";
 import ZelleNoteGuide from "@/components/ZelleNoteGuide";
+import { getBulkPercent, bulkLineTotal } from "@/lib/promotions/bulkPricing";
 
 // Kept in sync by eye with ZELLE_DISCOUNT_RATE in
 // src/app/api/checkout/zelle/route.ts — this is display-only (the server
@@ -109,8 +110,9 @@ export default function CartDrawer() {
   const [discountError, setDiscountError] = useState<string | null>(null);
   const [applyingDiscount, setApplyingDiscount] = useState(false);
 
-  // `subtotal` (from useCart()) is the plain sum of each line's real unit
-  // price — that's also exactly what's charged (see
+  // `subtotal` (from useCart()) is the sum of each line's real unit price
+  // (with the quantity/bulk discount already applied — see
+  // lib/promotions/bulkPricing.ts) — that's also exactly what's charged (see
   // 0025_restore_original_prices.sql — any "was" price is display-only,
   // shown struck through on the product pages, and never affects the real
   // price a line was added to the cart at). A typed discount code applies
@@ -323,6 +325,14 @@ export default function CartDrawer() {
                       <span>
                         {item.size} × {item.qty}
                       </span>
+                      {!item.isReward && !item.pointTransactionId && getBulkPercent(item.qty) > 0 && (
+                        <>
+                          <br />
+                          <span style={{ color: "#059669", fontWeight: 700 }}>
+                            {getBulkPercent(item.qty)}% bulk discount applied
+                          </span>
+                        </>
+                      )}
                       {item.isReward && (
                         <>
                           <br />
@@ -334,7 +344,13 @@ export default function CartDrawer() {
                         Remove
                       </button>
                     </div>
-                    <div className="amt">{money(item.unitPrice * item.qty)}</div>
+                    <div className="amt">
+                      {money(
+                        item.isReward || item.pointTransactionId
+                          ? item.unitPrice * item.qty
+                          : bulkLineTotal(item.unitPrice, item.qty)
+                      )}
+                    </div>
                   </div>
                 ))
               )}
