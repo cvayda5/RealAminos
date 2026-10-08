@@ -222,7 +222,7 @@ export async function POST(request: Request) {
       orderId: order.id,
       orderNumber: order.order_number,
       buyerEmail: shipping.email,
-      redirectUrl: `${SITE_URL}/account/orders`,
+      redirectUrl: `${SITE_URL}/thank-you?order=${order.id}`,
     });
   } catch (err) {
     console.error("checkout/bitcoin: BTCPay invoice creation failed", err);

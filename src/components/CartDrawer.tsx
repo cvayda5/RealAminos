@@ -31,27 +31,6 @@ interface BitcoinOrderResult {
   checkoutUrl: string;
 }
 
-// Google Ads conversion: "Purchase". The Google tag itself (gtag.js,
-// AW-16694066039) is loaded on every page by the root layout, so this only
-// reports the event. Fires once, right when an order is created (checkout
-// happens in this drawer, so there's no separate thank-you page to put the
-// snippet on). transaction_id = the order number, which lets Google ignore a
-// duplicate report of the same order. NOTE: the order exists before the
-// payment is confirmed, so this counts orders placed, not orders paid.
-function reportPurchaseConversion(orderNumber: unknown, amountDue: unknown) {
-  try {
-    const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
-    gtag?.("event", "conversion", {
-      send_to: "AW-16694066039/i4JnCMnu5pMdEPf2rJg-",
-      value: Number(amountDue) || 0,
-      currency: "USD",
-      transaction_id: String(orderNumber ?? ""),
-    });
-  } catch {
-    // Tracking must never get in the way of a successful order.
-  }
-}
-
 const EMPTY_SHIPPING: ShippingDetails = {
   name: "",
   phone: "",
@@ -289,7 +268,6 @@ export default function CartDrawer() {
       createdAt: body.createdAt,
     });
 
-    reportPurchaseConversion(body.orderNumber, body.amountDue);
     // The order is now real (unpaid, but real — any redeemed reward points
     // are already spent/linked to it) — clear the cart rather than leaving
     // these items sitting in the drawer looking like they still need
@@ -327,7 +305,6 @@ export default function CartDrawer() {
       checkoutUrl: body.checkoutUrl,
     });
 
-    reportPurchaseConversion(body.orderNumber, body.amountDue);
     clear();
   }
 
@@ -755,7 +732,7 @@ export default function CartDrawer() {
                         You MUST put {zelleOrder.orderNumber} in the Zelle payment note, or your payment
                         will be refunded instead of fulfilled.
                       </p>
-                      <ZellePaymentStatus orderId={zelleOrder.orderId} createdAt={zelleOrder.createdAt} />
+                      <ZellePaymentStatus orderId={zelleOrder.orderId} createdAt={zelleOrder.createdAt} onPaid={handleClose} />
                       <p style={{ margin: "10px 0 0", fontSize: 11.5, color: "var(--muted)" }}>
                         You can also find these instructions and the button above anytime on the My
                         Orders page, as long as you&apos;re still inside the 20-minute window.

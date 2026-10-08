@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/api", "/account", "/cart", "/checkout", "/auth"],
+        disallow: ["/admin", "/api", "/account", "/cart", "/checkout", "/auth", "/thank-you"],
       },
     ],
     sitemap: "https://shoprealaminos.com/sitemap.xml",

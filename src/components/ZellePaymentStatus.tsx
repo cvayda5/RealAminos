@@ -65,8 +65,11 @@ export default function ZellePaymentStatus({ orderId, createdAt, onPaid }: Props
       return;
     }
     setDone(true);
+    // Paid — send the customer to the thank-you page (that's also where the
+    // Google Ads purchase conversion fires). Navigate first, then let the
+    // parent clean up (CartDrawer closes itself).
+    router.push(`/thank-you?order=${encodeURIComponent(orderId)}`);
     onPaid?.();
-    router.refresh();
   }
 
   if (done) {
