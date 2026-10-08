@@ -16,7 +16,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const CONVERSION_SEND_TO = "AW-16694066039/i4JnCMnu5pMdEPf2rJg-";
+const CONVERSION_SEND_TO = "AW-16694066039/oB4GCIfOm5UdEPf2rJg-";
 const POLL_MS = 8000;
 
 interface Props {
