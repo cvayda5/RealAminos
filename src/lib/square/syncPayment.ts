@@ -8,7 +8,7 @@
 import type { OrderWithItems } from "@/types/database";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { finalizeOrderPayment } from "@/lib/orders/finalizeZellePayment";
-import { getSquareOrder, isSquareConfigured, squareOrderIsPaid } from "@/lib/square/client";
+import { getSquareOrder, isSquareConfigured, squareOrderPaidCheck } from "@/lib/square/client";
 
 export type SquareSyncResult =
   | { state: "paid" }
@@ -35,7 +35,11 @@ export async function syncSquareOrderPayment(
 
   // No Square discount exists — what's due is exactly total + shipping.
   const cents = Math.round(((order.total ?? order.subtotal) + order.shipping_fee) * 100);
-  if (!squareOrderIsPaid(sq, { cents, ourOrderId: order.id })) {
+  const check = squareOrderPaidCheck(sq, { cents, ourOrderId: order.id });
+  if (!check.paid) {
+    // Shows up in Vercel → Logs; this is the first place to look when a card
+    // payment went through on Square's side but the order didn't confirm.
+    console.warn("square sync: not paid yet", order.id, check.reason, "state=", sq.state);
     return { state: "pending" };
   }
 

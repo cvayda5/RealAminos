@@ -131,16 +131,32 @@ export async function getSquareOrder(squareOrderId: string): Promise<SquareOrder
 // amount we asked for, at our location, and it's stamped with our order id.
 // Everything here comes from our own authenticated API call to Square — never
 // from the contents of a webhook or a URL the customer could edit.
+//
+// Square can leave a paid payment-link order in state OPEN for a while before
+// it flips to COMPLETED, so OPEN counts too — but only with hard proof of
+// payment: Square must explicitly report net_amount_due = 0 AND the order's
+// tenders must add up to the full total. DRAFT / CANCELED never count.
+export function squareOrderPaidCheck(
+  sq: SquareOrder,
+  expected: { cents: number; ourOrderId: string }
+): { paid: boolean; reason: string } {
+  const { locationId } = config();
+  if (sq.reference_id !== expected.ourOrderId) return { paid: false, reason: "reference_id mismatch" };
+  if (sq.location_id !== locationId) return { paid: false, reason: `location mismatch (${sq.location_id})` };
+  if (sq.total_money?.currency !== "USD" || sq.total_money?.amount !== expected.cents) {
+    return { paid: false, reason: `total mismatch (${sq.total_money?.amount} ${sq.total_money?.currency} vs ${expected.cents})` };
+  }
+  if (sq.state !== "COMPLETED" && sq.state !== "OPEN") return { paid: false, reason: `state ${sq.state}` };
+  const due = sq.net_amount_due_money?.amount;
+  if (due === undefined || due !== 0) return { paid: false, reason: `net_amount_due ${due}` };
+  const tendered = (sq.tenders ?? []).reduce((sum, t) => sum + (t.amount_money?.amount ?? 0), 0);
+  if (tendered < expected.cents) return { paid: false, reason: `tendered ${tendered} < ${expected.cents}` };
+  return { paid: true, reason: "paid" };
+}
+
 export function squareOrderIsPaid(
   sq: SquareOrder,
   expected: { cents: number; ourOrderId: string }
 ): boolean {
-  const { locationId } = config();
-  if (sq.state !== "COMPLETED") return false;
-  if (sq.reference_id !== expected.ourOrderId) return false;
-  if (sq.location_id !== locationId) return false;
-  if (sq.total_money?.currency !== "USD" || sq.total_money?.amount !== expected.cents) return false;
-  // Fully settled: nothing left due on the order.
-  if ((sq.net_amount_due_money?.amount ?? 0) !== 0) return false;
-  return true;
+  return squareOrderPaidCheck(sq, expected).paid;
 }

@@ -3,6 +3,8 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus, OrderWithItems } from "@/types/database";
 import ZellePaymentStatus from "@/components/ZellePaymentStatus";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { syncSquareOrderPayment } from "@/lib/square/syncPayment";
 
 const STEPS: OrderStatus[] = ["Processing", "Shipped", "Delivered"];
 
@@ -28,11 +30,29 @@ export default async function OrdersPage() {
     redirect("/login?next=/account/orders");
   }
 
-  const { data: orders, error } = await supabase
-    .from("orders")
-    .select("*, order_items(*)")
-    .order("created_at", { ascending: false })
-    .returns<OrderWithItems[]>();
+  const loadOrders = () =>
+    supabase
+      .from("orders")
+      .select("*, order_items(*)")
+      .order("created_at", { ascending: false })
+      .returns<OrderWithItems[]>();
+
+  let { data: orders, error } = await loadOrders();
+
+  // Card orders still "Awaiting Payment": ask Square directly whether they've
+  // been paid (the webhook normally does this instantly; this is the safety
+  // net if it's late or not set up). Only this customer's own orders are in
+  // the list (RLS), and nothing is trusted except Square's own answer.
+  const pendingSquare = (orders ?? []).filter(
+    (o) => o.status === "Awaiting Payment" && o.payment_method === "square" && o.square_order_id
+  );
+  if (pendingSquare.length > 0) {
+    const admin = createAdminClient();
+    const results = await Promise.all(pendingSquare.map((o) => syncSquareOrderPayment(admin, o)));
+    if (results.some((r) => r.state === "paid")) {
+      ({ data: orders, error } = await loadOrders());
+    }
+  }
 
   return (
     <main className="site-main">
