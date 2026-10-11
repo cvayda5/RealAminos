@@ -10,11 +10,10 @@
 //   SQUARE_ENVIRONMENT             "production" (default) or "sandbox"
 //   SQUARE_WEBHOOK_SIGNATURE_KEY   shown on the webhook subscription (see verifyWebhook.ts)
 //   SQUARE_WEBHOOK_URL             optional; defaults to https://shoprealaminos.com/api/webhooks/square
-//   SQUARE_API_VERSION             optional; pins the Square-Version header
+//   SQUARE_API_VERSION             optional; pins the Square-Version header (if unset, Square uses
+//                                  the API version set on your app in the Developer Dashboard)
 //   NEXT_PUBLIC_SQUARE_ENABLED     "true" shows the "Pay by card" option in the cart
 //                                  (leave unset until everything above is in place)
-
-const DEFAULT_SQUARE_VERSION = "2025-01-23";
 
 export interface SquareMoney {
   amount?: number;
@@ -51,7 +50,7 @@ function config() {
     process.env.SQUARE_ENVIRONMENT === "sandbox"
       ? "https://connect.squareupsandbox.com"
       : "https://connect.squareup.com";
-  return { token, locationId, baseUrl, version: process.env.SQUARE_API_VERSION || DEFAULT_SQUARE_VERSION };
+  return { token, locationId, baseUrl, version: process.env.SQUARE_API_VERSION || "" };
 }
 
 async function squareFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -60,7 +59,7 @@ async function squareFetch<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: {
       Authorization: `Bearer ${token}`,
-      "Square-Version": version,
+      ...(version ? { "Square-Version": version } : {}),
       "Content-Type": "application/json",
       ...(init?.headers ?? {}),
     },

@@ -227,8 +227,13 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("checkout/square: Square payment link creation failed", err);
     await admin.from("orders").delete().eq("id", order.id);
+    // Staff (is_admin) get Square's actual error text so a setup problem —
+    // wrong token, wrong location, sandbox/production mix-up — can be seen
+    // right in the cart. Everyone else just gets the friendly message.
+    const { data: staff } = await supabase.from("profiles").select("is_admin").eq("id", user.id).single();
+    const detail = staff?.is_admin && err instanceof Error ? ` [Admin detail: ${err.message}]` : "";
     return NextResponse.json(
-      { error: "Couldn't start the card payment — please try again, or choose Zelle or Bitcoin." },
+      { error: `Couldn't start the card payment — please try again, or choose Zelle or Bitcoin.${detail}` },
       { status: 502 }
     );
   }
