@@ -62,7 +62,40 @@ export default async function OrdersPage() {
                 </div>
               </div>
 
-              {order.status === "Awaiting Payment" && order.payment_method === "bitcoin" ? (
+              {order.status === "Awaiting Payment" && order.payment_method === "square" ? (
+                <div
+                  style={{
+                    background: "var(--warn-bg)",
+                    border: "1px solid var(--warn-line)",
+                    borderRadius: 10,
+                    padding: 16,
+                    margin: "18px 0",
+                  }}
+                >
+                  <p style={{ margin: "0 0 6px", fontWeight: 800, color: "var(--orange-dark)" }}>
+                    Awaiting your card payment
+                  </p>
+                  <p style={{ margin: "0 0 10px", fontSize: 14 }}>
+                    Amount due:{" "}
+                    <strong>${((order.total ?? order.subtotal) + order.shipping_fee).toFixed(2)}</strong>. Your
+                    order updates on its own as soon as the payment goes through — nothing else to do after you
+                    pay.
+                  </p>
+                  {order.square_checkout_url && (
+                    <a
+                      className="btn"
+                      href={order.square_checkout_url}
+                      style={{ display: "inline-block", textDecoration: "none" }}
+                    >
+                      Pay by card →
+                    </a>
+                  )}
+                  <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--muted)" }}>
+                    Already paid and still seeing this? Give it a minute and refresh, or email
+                    info@shoprealaminos.com with your order number.
+                  </p>
+                </div>
+              ) : order.status === "Awaiting Payment" && order.payment_method === "bitcoin" ? (
                 <div
                   style={{
                     background: "var(--warn-bg)",

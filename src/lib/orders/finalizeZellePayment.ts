@@ -46,16 +46,20 @@ export async function finalizeZellePayment(
   return finalizeOrderPayment(admin, order, markedPaidBy);
 }
 
-// Works for both Zelle and Bitcoin orders. For Bitcoin, markedPaidBy is
-// null when BTCPay's webhook confirmed the payment automatically (and
-// zelle_marked_paid_by is only ever written for Zelle orders).
+// Works for Zelle, Bitcoin and Square (card) orders. For Bitcoin and Square,
+// markedPaidBy is null when the processor's webhook (or, for Square, the
+// thank-you page's own verified check) confirmed the payment automatically
+// (and zelle_marked_paid_by is only ever written for Zelle orders).
 export async function finalizeOrderPayment(
   admin: ReturnType<typeof createAdminClient>,
   order: OrderWithItems,
   markedPaidBy: "customer" | "staff" | null
 ): Promise<FinalizeResult> {
-  if ((order.payment_method !== "zelle" && order.payment_method !== "bitcoin") || order.status !== "Awaiting Payment") {
-    return { ok: false, status: 400, error: "This order isn't an unpaid Zelle or Bitcoin order — nothing to mark paid." };
+  if (
+    (order.payment_method !== "zelle" && order.payment_method !== "bitcoin" && order.payment_method !== "square") ||
+    order.status !== "Awaiting Payment"
+  ) {
+    return { ok: false, status: 400, error: "This order isn't an unpaid Zelle, Bitcoin or card order — nothing to mark paid." };
   }
 
   // Claim the order first, atomically: the UPDATE only matches while it's
@@ -184,7 +188,7 @@ export async function awardZellePointsOnShip(
   admin: ReturnType<typeof createAdminClient>,
   order: Pick<OrderWithItems, "id" | "order_number" | "user_id" | "payment_method" | "total" | "subtotal">
 ): Promise<void> {
-  if (order.payment_method !== "zelle" && order.payment_method !== "bitcoin") return;
+  if (order.payment_method !== "zelle" && order.payment_method !== "bitcoin" && order.payment_method !== "square") return;
 
   const pointsEarned = Math.floor(order.total ?? order.subtotal);
   if (pointsEarned <= 0) return;

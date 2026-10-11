@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { syncSquareOrderPayment } from "@/lib/square/syncPayment";
 import type { OrderWithItems } from "@/types/database";
 import ThankYouTracker from "./ThankYouTracker";
 
@@ -26,6 +28,8 @@ function money(n: number) {
 //              tap "I've Sent My Zelle Payment" and it succeeds.
 //   - Bitcoin: BTCPay's "Return to store" button points here (the invoice's
 //              redirectURL — see /api/checkout/bitcoin).
+//   - Card:    Square sends the customer back here after they pay (the payment
+//              link's redirect_url — see /api/checkout/square).
 // URL: https://shoprealaminos.com/thank-you?order=<order id>
 //
 // The order is read with the customer's own session, so Row Level Security
@@ -48,13 +52,25 @@ export default async function ThankYouPage({
     redirect(`/login?next=${encodeURIComponent(`/thank-you?order=${orderId}`)}`);
   }
 
-  const { data: order } = UUID.test(orderId)
+  const { data: foundOrder } = UUID.test(orderId)
     ? await supabase
         .from("orders")
         .select("*, order_items(*)")
         .eq("id", orderId)
         .maybeSingle<OrderWithItems>()
     : { data: null };
+  let current: OrderWithItems | null = foundOrder;
+
+  // A card customer lands here seconds after paying — often before Square's
+  // webhook has arrived. Ask Square directly (server-side, with our own API
+  // token) whether it's paid and finalize right now if so, so the page shows
+  // the real thank-you immediately. Safe to repeat: the finalize step claims
+  // the order atomically, so this and the webhook can never both apply.
+  if (current && current.status === "Awaiting Payment" && current.payment_method === "square") {
+    const synced = await syncSquareOrderPayment(createAdminClient(), current);
+    if (synced.state === "paid") current = { ...current, status: "Processing" };
+  }
+  const order = current;
 
   if (!order) {
     return (
@@ -112,6 +128,8 @@ export default async function ThankYouPage({
               <p style={{ color: "var(--muted)", margin: 0 }}>
                 {order.payment_method === "bitcoin"
                   ? "Bitcoin payments usually confirm within about an hour. This page updates by itself — you can leave it open or check My Orders later."
+                  : order.payment_method === "square"
+                  ? "Card payments usually confirm within seconds. This page updates by itself — if you haven't paid yet, finish from the My Orders page."
                   : "If you already sent it, this page will update shortly. Otherwise finish paying from the My Orders page."}
               </p>
             </>

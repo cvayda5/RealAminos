@@ -125,6 +125,7 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
 
   const isZelle = order.payment_method === "zelle";
   const isBitcoin = order.payment_method === "bitcoin";
+  const isSquare = order.payment_method === "square";
   const isAwaitingPayment = order.status === "Awaiting Payment";
   const grandTotal = (order.total ?? order.subtotal) + order.shipping_fee - (order.zelle_discount_amount ?? 0);
   const hasDiscount = !!order.discount_code && order.discount_percent > 0;
@@ -141,6 +142,11 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
         {isBitcoin && (
           <div style={{ fontSize: 10.5, fontWeight: 800, color: "var(--orange-dark)", letterSpacing: ".03em", marginTop: 2 }}>
             BITCOIN
+          </div>
+        )}
+        {isSquare && (
+          <div style={{ fontSize: 10.5, fontWeight: 800, color: "var(--orange-dark)", letterSpacing: ".03em", marginTop: 2 }}>
+            CARD (SQUARE)
           </div>
         )}
       </td>
@@ -201,6 +207,11 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
         {isAwaitingPayment && isBitcoin && (
           <div style={{ fontSize: 11, fontWeight: 800, color: "var(--danger)", marginTop: 4 }}>
             Bitcoin confirms automatically — only use Mark Paid after verifying the invoice is settled in BTCPay
+          </div>
+        )}
+        {isAwaitingPayment && isSquare && (
+          <div style={{ fontSize: 11, fontWeight: 800, color: "var(--danger)", marginTop: 4 }}>
+            Card confirms automatically — only use Mark Paid after verifying the payment completed in Square
           </div>
         )}
         {order.status === "Processing" && order.zelle_marked_paid_by === "customer" && (

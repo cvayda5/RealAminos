@@ -27,7 +27,9 @@ export default function PrivacyPolicyPage() {
         <p>
           <strong>Order information:</strong> your name, shipping address, email, the items you
           order, order totals, and any discount or affiliate code you use. We accept payment by
-          Zelle and by Bitcoin. For Zelle, we see only the payment details Zelle provides us (such
+          card (processed by Square), by Zelle and by Bitcoin. For card payments, you enter your
+          card details on Square&apos;s own secure payment page and we receive only the payment
+          status. For Zelle, we see only the payment details Zelle provides us (such
           as the sender name and the payment note). For Bitcoin, payment is handled through a
           BTCPay Server payment page, and we receive only the order&apos;s payment status and the
           public blockchain transaction details — never your wallet&apos;s private keys. Bitcoin

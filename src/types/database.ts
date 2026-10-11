@@ -4,7 +4,7 @@
 
 export type OrderStatus = "Awaiting Payment" | "Processing" | "Shipped" | "Delivered";
 
-export type PaymentMethod = "card" | "zelle" | "bitcoin";
+export type PaymentMethod = "card" | "zelle" | "bitcoin" | "square";
 
 export interface Profile {
   id: string;
@@ -110,7 +110,7 @@ export interface Order {
   // customer actually paid is total + shipping_fee. See
   // src/lib/shipping/rate.ts.
   shipping_fee: number;
-  // 'card' (legacy, Whop), 'zelle' or 'bitcoin' (BTCPay). Defaults to 'card' for every order placed
+  // 'card' (legacy, Whop), 'zelle', 'bitcoin' (BTCPay) or 'square' (card via Square). Defaults to 'card' for every order placed
   // before this column existed.
   payment_method: PaymentMethod;
   // How much the 5% Zelle discount knocked off (total + shipping_fee) for
@@ -131,6 +131,11 @@ export interface Order {
   // order is paid through, and its hosted checkout page. Null for everything else.
   btcpay_invoice_id: string | null;
   btcpay_checkout_url: string | null;
+  // Square orders only (0029_square_payments.sql): the Square order and hosted
+  // payment link this order is paid through. Null for everything else.
+  square_order_id: string | null;
+  square_payment_link_id: string | null;
+  square_checkout_url: string | null;
   // Set together, only once a Shippo label has actually been purchased for
   // this order — see 0022_shipping_labels.sql and src/lib/shipping/shippo.ts.
   // All null/0 for any order that either predates this column or was shipped

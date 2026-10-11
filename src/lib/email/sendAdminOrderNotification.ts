@@ -15,7 +15,7 @@ const ADMIN_NOTIFICATION_EMAIL = "colton.vayda@gmail.com";
 
 type AdminOrderNotificationInput = {
   orderNumber: string;
-  paymentMethod: "card" | "zelle" | "bitcoin";
+  paymentMethod: "card" | "zelle" | "bitcoin" | "square";
   // Only ever true for Zelle — a card order is only created once Whop has
   // already confirmed the payment, so by the time this fires it's always
   // effectively paid.
@@ -40,6 +40,8 @@ export async function sendAdminOrderNotification(input: AdminOrderNotificationIn
       ? `Zelle${input.awaitingPayment ? " (awaiting payment)" : ""}`
       : input.paymentMethod === "bitcoin"
       ? `Bitcoin${input.awaitingPayment ? " (awaiting payment — confirms automatically)" : ""}`
+      : input.paymentMethod === "square"
+      ? `Card (Square)${input.awaitingPayment ? " (awaiting payment — confirms automatically)" : ""}`
       : "Card";
 
   const text = `New order — #${input.orderNumber}

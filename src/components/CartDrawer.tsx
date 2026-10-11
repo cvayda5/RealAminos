@@ -31,6 +31,18 @@ interface BitcoinOrderResult {
   checkoutUrl: string;
 }
 
+interface SquareOrderResult {
+  orderId: string;
+  orderNumber: string;
+  amountDue: number;
+  checkoutUrl: string;
+}
+
+// The "Pay by card" (Square) option stays hidden until this is switched on in
+// Vercel (NEXT_PUBLIC_SQUARE_ENABLED=true, then redeploy) — so the code can be
+// deployed before the Square keys are in place without showing a broken option.
+const CARD_ENABLED = process.env.NEXT_PUBLIC_SQUARE_ENABLED === "true";
+
 const EMPTY_SHIPPING: ShippingDetails = {
   name: "",
   phone: "",
@@ -103,11 +115,14 @@ export default function CartDrawer() {
   // Zelle is the only payment method, so it's selected by default. Once it
   // has actually created its (unpaid) order, the result is cached in
   // zelleOrder so re-opening this step doesn't create a second order.
-  const [paymentMethod, setPaymentMethod] = useState<"zelle" | "bitcoin" | null>("zelle");
+  const [paymentMethod, setPaymentMethod] = useState<"zelle" | "bitcoin" | "square" | null>("zelle");
   const [zelleOrder, setZelleOrder] = useState<ZelleOrderResult | null>(null);
   const [bitcoinOrder, setBitcoinOrder] = useState<BitcoinOrderResult | null>(null);
   const [bitcoinLoading, setBitcoinLoading] = useState(false);
   const [bitcoinError, setBitcoinError] = useState<string | null>(null);
+  const [squareOrder, setSquareOrder] = useState<SquareOrderResult | null>(null);
+  const [squareLoading, setSquareLoading] = useState(false);
+  const [squareError, setSquareError] = useState<string | null>(null);
   const [zelleLoading, setZelleLoading] = useState(false);
   const [zelleError, setZelleError] = useState<string | null>(null);
 
@@ -280,7 +295,7 @@ export default function CartDrawer() {
   // itself when BTCPay's webhook reports the payment confirmed — the customer
   // doesn't need to come back and press anything.
   async function handleSelectBitcoin() {
-    if (bitcoinOrder || bitcoinLoading || zelleOrder) return;
+    if (bitcoinOrder || bitcoinLoading || zelleOrder || squareOrder) return;
 
     setBitcoinLoading(true);
     setBitcoinError(null);
@@ -308,6 +323,42 @@ export default function CartDrawer() {
     clear();
   }
 
+  // Card (Square): creates the real (unpaid) order plus a Square payment link,
+  // then sends the customer straight to Square's secure hosted page to pay.
+  // Square sends them back to /thank-you afterwards, and the order moves to
+  // Processing on its own once Square confirms the payment.
+  async function handleSelectSquare() {
+    if (squareOrder || squareLoading || zelleOrder || bitcoinOrder) return;
+
+    setSquareLoading(true);
+    setSquareError(null);
+
+    const res = await fetch("/api/checkout/square", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cartPayload()),
+    });
+    const body = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      setSquareLoading(false);
+      setSquareError(body.error ?? "Something went wrong starting checkout.");
+      return;
+    }
+
+    setSquareOrder({
+      orderId: body.orderId,
+      orderNumber: body.orderNumber,
+      amountDue: body.amountDue,
+      checkoutUrl: body.checkoutUrl,
+    });
+    // The order is real now (unpaid, but any redeemed reward points are linked
+    // to it) — clear the cart, then hand off to Square. The button below is the
+    // fallback if the automatic redirect is ever blocked.
+    clear();
+    window.location.assign(body.checkoutUrl);
+  }
+
   function handleClose() {
     // Closing the drawer mid-checkout shouldn't strand the customer
     // mid-flow next time they open it with an empty cart view.
@@ -317,6 +368,9 @@ export default function CartDrawer() {
     setZelleError(null);
     setBitcoinOrder(null);
     setBitcoinError(null);
+    setSquareOrder(null);
+    setSquareError(null);
+    setSquareLoading(false);
     closeDrawer();
   }
 
@@ -596,10 +650,31 @@ export default function CartDrawer() {
                 <span>{money(grandTotal)}</span>
               </div>
 
+              {CARD_ENABLED && (
+                <div
+                  className={`payment-option ${paymentMethod === "square" ? "selected" : ""}`}
+                  onClick={() => {
+                    if (!zelleOrder && !bitcoinOrder) setPaymentMethod("square");
+                  }}
+                  style={{
+                    border: `2px solid ${paymentMethod === "square" ? "var(--orange)" : "var(--line)"}`,
+                    borderRadius: 10,
+                    padding: 14,
+                    marginBottom: 12,
+                    cursor: "pointer",
+                  }}
+                >
+                  <strong>💳 Credit / Debit Card</strong>
+                  <div style={{ fontSize: 12.5, color: "var(--muted)" }}>
+                    {money(squareOrder?.amountDue ?? grandTotal)} — secure payment page, confirms instantly
+                  </div>
+                </div>
+              )}
+
               <div
                 className={`payment-option ${paymentMethod === "zelle" ? "selected" : ""}`}
                 onClick={() => {
-                  if (!bitcoinOrder) setPaymentMethod("zelle");
+                  if (!bitcoinOrder && !squareOrder) setPaymentMethod("zelle");
                 }}
                 style={{
                   border: `2px solid ${paymentMethod === "zelle" ? "var(--orange)" : "var(--line)"}`,
@@ -619,7 +694,7 @@ export default function CartDrawer() {
               <div
                 className={`payment-option ${paymentMethod === "bitcoin" ? "selected" : ""}`}
                 onClick={() => {
-                  if (!zelleOrder) setPaymentMethod("bitcoin");
+                  if (!zelleOrder && !squareOrder) setPaymentMethod("bitcoin");
                 }}
                 style={{
                   border: `2px solid ${paymentMethod === "bitcoin" ? "var(--orange)" : "var(--line)"}`,
@@ -634,6 +709,62 @@ export default function CartDrawer() {
                   {money(bitcoinOrder?.amountDue ?? grandTotal)} — confirms automatically, no manual steps
                 </div>
               </div>
+
+              {CARD_ENABLED && paymentMethod === "square" && (
+                <div
+                  style={{
+                    background: "var(--warn-bg)",
+                    border: "1px solid var(--warn-line)",
+                    borderRadius: 10,
+                    padding: 14,
+                    marginTop: 4,
+                  }}
+                >
+                  {!squareOrder ? (
+                    <>
+                      <p style={{ margin: "0 0 10px", fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.5 }}>
+                        You&apos;ll pay <strong>{money(grandTotal)}</strong> by card on Square&apos;s secure payment
+                        page — your card details never touch our site. Your order moves to Processing on its own
+                        as soon as the payment goes through.
+                      </p>
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{ width: "100%" }}
+                        onClick={handleSelectSquare}
+                        disabled={squareLoading}
+                      >
+                        {squareLoading ? "Taking you to secure checkout…" : "Continue to card payment"}
+                      </button>
+                      {squareError && (
+                        <p className="error" style={{ marginTop: 8 }}>
+                          {squareError}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <p style={{ margin: "0 0 4px", fontSize: 13.5 }}>
+                        Order number: <strong>{squareOrder.orderNumber}</strong>
+                      </p>
+                      <p style={{ margin: "0 0 12px", fontSize: 13.5 }}>
+                        Amount due: <strong>{money(squareOrder.amountDue)}</strong>
+                      </p>
+                      <a
+                        className="btn"
+                        href={squareOrder.checkoutUrl}
+                        style={{ display: "block", textAlign: "center", textDecoration: "none" }}
+                      >
+                        Pay by card →
+                      </a>
+                      <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
+                        Taking you to Square&apos;s secure page… if nothing happens, tap the button. You can also
+                        pay later from the My Orders page.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
 
               {paymentMethod === "bitcoin" && (
                 <div
