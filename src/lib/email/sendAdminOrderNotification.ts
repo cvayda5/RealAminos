@@ -20,6 +20,10 @@ type AdminOrderNotificationInput = {
   // already confirmed the payment, so by the time this fires it's always
   // effectively paid.
   awaitingPayment: boolean;
+  // Zelle only: the customer has tapped "I've Sent My Zelle Payment", but
+  // nothing has been verified — the owner has to check Zelle activity for
+  // this order number and amount and confirm it by hand.
+  manualConfirm?: boolean;
   items: { productName: string; size: string; qty: number }[];
   // What the customer actually owes/paid, all discounts and shipping
   // already folded in — the one number worth seeing at a glance.
@@ -37,18 +41,26 @@ export async function sendAdminOrderNotification(input: AdminOrderNotificationIn
   const itemLines = input.items.map((i) => `${i.productName} (${i.size}) x${i.qty}`).join(", ");
   const paymentLine =
     input.paymentMethod === "zelle"
-      ? `Zelle${input.awaitingPayment ? " (awaiting payment)" : ""}`
+      ? input.manualConfirm
+        ? "Zelle — verify manually"
+        : `Zelle${input.awaitingPayment ? " (awaiting payment)" : ""}`
       : input.paymentMethod === "bitcoin"
-      ? `Bitcoin${input.awaitingPayment ? " (awaiting payment — confirms automatically)" : ""}`
+      ? `Bitcoin${input.awaitingPayment ? " (awaiting payment — confirms automatically)" : " — paid"}`
       : input.paymentMethod === "square"
-      ? `Card (Square)${input.awaitingPayment ? " (awaiting payment — confirms automatically)" : ""}`
+      ? `Card (Square)${input.awaitingPayment ? " (awaiting payment — confirms automatically)" : " — paid"}`
       : "Card";
+  const amountLabel = input.manualConfirm ? "Amount to verify" : input.awaitingPayment ? "Amount due" : "Amount paid";
+  const zelleNotice = input.manualConfirm
+    ? `The customer says they've sent the Zelle payment — it is NOT verified. Check your Zelle activity for a payment of $${input.amountDue.toFixed(
+        2
+      )} with #${input.orderNumber} in the note, then confirm it on /admin/orders.`
+    : "";
 
   const text = `New order — #${input.orderNumber}
 
 Payment method: ${paymentLine}
-Amount due: $${input.amountDue.toFixed(2)}
-
+${amountLabel}: $${input.amountDue.toFixed(2)}
+${zelleNotice ? `\n${zelleNotice}\n` : ""}
 Items: ${itemLines}
 
 Ship to: ${input.shipping.name} — ${input.shipping.city}, ${input.shipping.state}
@@ -62,6 +74,11 @@ View it at https://shoprealaminos.com/admin/orders`;
       New Order
     </p>
     <h1 style="margin:0 0 16px;font-size:20px;color:${BRAND.ink};">#${input.orderNumber}</h1>
+    ${
+      zelleNotice
+        ? `<p style="margin:0 0 16px;padding:10px 12px;border-radius:8px;background:#fff7ed;border:1px solid #fed7aa;font-size:13.5px;color:${BRAND.ink};"><strong>Verify the Zelle payment.</strong> ${zelleNotice}</p>`
+        : ""
+    }
     <table style="width:100%;border-collapse:collapse;font-size:14px;color:${BRAND.ink};margin-bottom:14px;">
       ${input.items
         .map(
@@ -76,7 +93,7 @@ View it at https://shoprealaminos.com/admin/orders`;
         <td style="padding:4px 0;text-align:right;font-weight:700;">${paymentLine}</td>
       </tr>
       <tr>
-        <td style="padding:4px 0;color:${BRAND.muted};">Amount due</td>
+        <td style="padding:4px 0;color:${BRAND.muted};">${amountLabel}</td>
         <td style="padding:4px 0;text-align:right;font-weight:700;">$${input.amountDue.toFixed(2)}</td>
       </tr>
     </table>
@@ -111,7 +128,9 @@ View it at https://shoprealaminos.com/admin/orders`;
       body: JSON.stringify({
         from: "RealAminos <confirmation@shoprealaminos.com>",
         to: ADMIN_NOTIFICATION_EMAIL,
-        subject: `New Order — #${input.orderNumber} ($${input.amountDue.toFixed(2)})`,
+        subject: `New Order — #${input.orderNumber} ($${input.amountDue.toFixed(2)})${
+          input.manualConfirm ? " — verify Zelle" : ""
+        }`,
         text,
         html,
       }),

@@ -6,7 +6,6 @@ import { calculateShippingFee } from "@/lib/shipping/rate";
 import { resolveVariant } from "@/lib/inventory/resolveVariant";
 import { resolveDiscount } from "@/lib/checkout/resolveDiscount";
 import { bulkUnitPrice } from "@/lib/promotions/bulkPricing";
-import { sendAdminOrderNotification } from "@/lib/email/sendAdminOrderNotification";
 
 // 5% off for choosing Zelle over a card — in exchange for us not getting
 // instant payment confirmation the way Whop gives us. See the big comment
@@ -226,16 +225,8 @@ export async function POST(request: Request) {
     await admin.from("point_transactions").update({ order_id: order.id }).in("id", rewardTxIds);
   }
 
-  // Fire-and-forget — a failed notification email should never fail the
-  // order itself (sendAdminOrderNotification already never throws).
-  await sendAdminOrderNotification({
-    orderNumber: order.order_number,
-    paymentMethod: "zelle",
-    awaitingPayment: true,
-    items: normalizedItems.map((i) => ({ productName: i.productName, size: i.size, qty: i.qty })),
-    amountDue,
-    shipping: { name: shipping.name, city: shipping.city, state: shipping.state },
-  });
+  // The owner's "New Order" email is sent later — when the customer reaches
+  // /thank-you or the payment auto-confirms (see notifyAdminNewOrder).
 
   return NextResponse.json(
     {

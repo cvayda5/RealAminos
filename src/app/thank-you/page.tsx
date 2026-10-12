@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { syncSquareOrderPayment } from "@/lib/square/syncPayment";
+import { notifyAdminNewOrder } from "@/lib/orders/notifyAdminNewOrder";
 import type { OrderWithItems } from "@/types/database";
 import ThankYouTracker from "./ThankYouTracker";
 
@@ -90,6 +91,11 @@ export default async function ThankYouPage({
   }
 
   const paid = order.status !== "Awaiting Payment";
+
+  // Reaching this page with a paid/confirmed order is what triggers the
+  // owner's "New Order" email (once per order — see notifyAdminNewOrder).
+  // Still-pending card/Bitcoin orders send it later, when they confirm.
+  if (paid) await notifyAdminNewOrder(createAdminClient(), order);
   // What the customer actually paid: product total (after any code) plus
   // shipping, minus the Zelle discount if any. Same math as the checkout
   // routes' amountDue. A null total is a pre-discount-codes order = subtotal.

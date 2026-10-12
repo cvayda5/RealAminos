@@ -6,7 +6,6 @@ import { calculateShippingFee } from "@/lib/shipping/rate";
 import { resolveVariant } from "@/lib/inventory/resolveVariant";
 import { resolveDiscount } from "@/lib/checkout/resolveDiscount";
 import { bulkUnitPrice } from "@/lib/promotions/bulkPricing";
-import { sendAdminOrderNotification } from "@/lib/email/sendAdminOrderNotification";
 import { createSquarePaymentLink, isSquareConfigured } from "@/lib/square/client";
 
 const SITE_URL = "https://shoprealaminos.com";
@@ -262,14 +261,8 @@ export async function POST(request: Request) {
     await admin.from("point_transactions").update({ order_id: order.id }).in("id", rewardTxIds);
   }
 
-  await sendAdminOrderNotification({
-    orderNumber: order.order_number,
-    paymentMethod: "square",
-    awaitingPayment: true,
-    items: normalizedItems.map((i) => ({ productName: i.productName, size: i.size, qty: i.qty })),
-    amountDue,
-    shipping: { name: shipping.name, city: shipping.city, state: shipping.state },
-  });
+  // The owner's "New Order" email is sent later — when the customer reaches
+  // /thank-you or the payment auto-confirms (see notifyAdminNewOrder).
 
   return NextResponse.json(
     {

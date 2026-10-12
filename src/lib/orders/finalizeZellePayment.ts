@@ -18,6 +18,7 @@
 import type { OrderWithItems } from "@/types/database";
 import { sendOrderConfirmationEmail } from "@/lib/email/sendOrderConfirmation";
 import type { createAdminClient } from "@/lib/supabase/admin";
+import { notifyAdminNewOrder } from "@/lib/orders/notifyAdminNewOrder";
 
 export const ZELLE_PAYMENT_WINDOW_MINUTES = 20;
 
@@ -165,6 +166,16 @@ export async function finalizeOrderPayment(
         zip: order.shipping_zip ?? "",
       },
     });
+  }
+
+  // Card and Bitcoin payments confirm themselves (markedPaidBy === null):
+  // send the owner's "New Order" email now too, so it still goes out if the
+  // customer never reaches /thank-you. notifyAdminNewOrder only ever sends once
+  // per order, so this and the thank-you page can't double up. Zelle never
+  // lands here with null — its email comes from the thank-you page, since
+  // staff marking it paid by hand have obviously already seen the order.
+  if (markedPaidBy === null) {
+    await notifyAdminNewOrder(admin, { ...order, status: "Processing" });
   }
 
   return { ok: true };
