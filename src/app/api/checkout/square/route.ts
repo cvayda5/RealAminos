@@ -148,7 +148,11 @@ export async function POST(request: Request) {
   let discountCode: string | null;
   let discountPercent: number;
   try {
-    const resolved = await resolveDiscount(admin, body.discountCode);
+    const resolved = await resolveDiscount(admin, body.discountCode, {
+      userEmail: user.email,
+      shippingEmail: shipping.email,
+      shippingPhone: shipping.phone,
+    });
     discountCode = resolved.code;
     discountPercent = resolved.percent;
   } catch (err) {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { OWN_CODE_MESSAGE, assertNotOwnAffiliateCode } from "@/lib/checkout/resolveDiscount";
 
 interface Body {
   code?: string;
@@ -48,6 +49,15 @@ export async function POST(request: Request) {
 
   if (!data) {
     return NextResponse.json({ error: "That code is invalid or no longer active." }, { status: 404 });
+  }
+
+  // Affiliates can't use their own code. Only the account email is known at
+  // this step; the checkout routes repeat the check with the shipping phone
+  // and email, which is the one that actually enforces it.
+  try {
+    await assertNotOwnAffiliateCode(admin, data.code, { userEmail: user.email });
+  } catch {
+    return NextResponse.json({ error: OWN_CODE_MESSAGE }, { status: 403 });
   }
 
   return NextResponse.json({ code: data.code, percentOff: data.percent_off });

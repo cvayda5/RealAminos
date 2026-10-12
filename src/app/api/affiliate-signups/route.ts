@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizePhone } from "@/lib/checkout/resolveDiscount";
 
 interface Body {
   firstName?: string;
   lastName?: string;
   instagramHandle?: string;
   email?: string;
+  phone?: string;
   zelleInfo?: string;
   preferredCode?: string;
 }
@@ -27,14 +29,18 @@ export async function POST(request: Request) {
   const lastName = body.lastName?.trim();
   const instagramHandle = body.instagramHandle?.trim().replace(/^@+/, "");
   const email = body.email?.trim();
+  const phone = normalizePhone(body.phone);
   const zelleInfo = body.zelleInfo?.trim();
   const preferredCode = body.preferredCode?.trim().toUpperCase();
 
-  if (!firstName || !lastName || !instagramHandle || !email || !zelleInfo || !preferredCode) {
+  if (!firstName || !lastName || !instagramHandle || !email || !body.phone?.trim() || !zelleInfo || !preferredCode) {
     return NextResponse.json({ error: "All fields are required." }, { status: 400 });
   }
   if (!/^\S+@\S+\.\S+$/.test(email)) {
     return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
+  }
+  if (phone.length !== 10) {
+    return NextResponse.json({ error: "Enter a valid 10-digit phone number." }, { status: 400 });
   }
   if (preferredCode.length > MAX_CODE_LENGTH) {
     return NextResponse.json(
@@ -49,6 +55,7 @@ export async function POST(request: Request) {
     last_name: lastName,
     instagram_handle: instagramHandle,
     email,
+    phone,
     zelle_info: zelleInfo,
     preferred_code: preferredCode,
   });

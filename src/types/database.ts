@@ -213,6 +213,9 @@ export interface AffiliateSignup {
   last_name: string;
   instagram_handle: string;
   email: string;
+  // Digits only — see 0030_affiliate_phone.sql. Null only for signups
+  // submitted before this field existed; required for anything since.
+  phone: string | null;
   preferred_code: string;
   // Email or phone the applicant uses for Zelle — see
   // 0027_affiliate_zelle_info.sql. Null only for signups submitted before

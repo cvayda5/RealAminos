@@ -9,6 +9,7 @@ export default function AffiliateSignupForm() {
   const [lastName, setLastName] = useState("");
   const [instagramHandle, setInstagramHandle] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [zelleInfo, setZelleInfo] = useState("");
   const [preferredCode, setPreferredCode] = useState("");
   const [saving, setSaving] = useState(false);
@@ -23,7 +24,7 @@ export default function AffiliateSignupForm() {
     const res = await fetch("/api/affiliate-signups", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ firstName, lastName, instagramHandle, email, zelleInfo, preferredCode }),
+      body: JSON.stringify({ firstName, lastName, instagramHandle, email, phone, zelleInfo, preferredCode }),
     });
     const body = await res.json().catch(() => ({}));
 
@@ -84,6 +85,20 @@ export default function AffiliateSignupForm() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
+
+      <input
+        required
+        type="tel"
+        inputMode="tel"
+        autoComplete="tel"
+        placeholder="Phone Number"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+      />
+      <p style={{ fontSize: 11.5, color: "#9aa5b1", margin: "-6px 0 10px" }}>
+        Required. Affiliate codes are for your audience &mdash; they can&apos;t be used on your own
+        orders.
+      </p>
 
       <input
         required

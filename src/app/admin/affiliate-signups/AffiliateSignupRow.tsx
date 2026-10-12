@@ -45,6 +45,9 @@ export default function AffiliateSignupRow({ signup }: { signup: AffiliateSignup
         <a href={`mailto:${signup.email}`}>{signup.email}</a>
       </td>
       <td style={{ fontFamily: "var(--mono)", fontSize: 12.5 }}>
+        {signup.phone ?? <span style={{ color: "var(--muted)", fontFamily: "var(--sans)" }}>— none —</span>}
+      </td>
+      <td style={{ fontFamily: "var(--mono)", fontSize: 12.5 }}>
         {signup.zelle_info ?? <span style={{ color: "var(--muted)", fontFamily: "var(--sans)" }}>— not provided —</span>}
       </td>
       <td>
