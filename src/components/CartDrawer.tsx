@@ -236,6 +236,15 @@ export default function CartDrawer() {
   // (unpaid) order right at selection time rather than at a final submit.
   function handleContinueToPayment(e: React.FormEvent) {
     e.preventDefault();
+    // Record the cart for the checkout-abandonment reminder emails (1h / 24h
+    // / 72h — see /api/checkout/abandonment). Fire-and-forget: it must never
+    // slow down or break checkout, so any failure is ignored.
+    fetch("/api/checkout/abandonment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cartPayload()),
+      keepalive: true,
+    }).catch(() => {});
     setStep("payment");
   }
 
