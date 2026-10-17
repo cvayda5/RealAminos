@@ -11,6 +11,8 @@ type OrderShippedInput = {
   orderNumber: string;
   items: { productName: string; size: string; qty: number }[];
   trackingNumber?: string | null;
+  // Free local delivery order — "out for delivery" instead of "shipped".
+  localDelivery?: boolean;
   shipping: {
     name: string;
     addressLine1: string;
@@ -46,14 +48,15 @@ export async function sendOrderShippedEmail(input: OrderShippedInput): Promise<b
     ? `<p style="font-size:14px;margin:16px 0 4px;color:${BRAND.ink};"><strong>Tracking Number:</strong> ${input.trackingNumber}</p>`
     : "";
 
-  const text = `Your order has shipped!
+  const heading = input.localDelivery ? "Your order is out for delivery!" : "Your order has shipped!";
+  const text = `${heading}
 
 Order #${input.orderNumber}
 
 What shipped:
 ${itemRowsText}
 ${trackingLineText}
-Shipping to:
+${input.localDelivery ? "Delivering to" : "Shipping to"}:
 ${addressText}
 
 You can check your order status any time on the My Orders page.
@@ -65,7 +68,7 @@ Products are for laboratory research use only and are not for human or veterinar
       <div style="display:inline-block;width:44px;height:44px;line-height:44px;border-radius:999px;background:#fff7ed;color:${
         BRAND.orangeDark
       };font-size:20px;margin-bottom:14px;">&#128230;</div>
-      <h1 style="margin:0 0 8px;font-size:20px;color:${BRAND.ink};">Your order has shipped!</h1>
+      <h1 style="margin:0 0 8px;font-size:20px;color:${BRAND.ink};">${heading}</h1>
       <div>${orderNumberPill(input.orderNumber)}</div>
     </div>
     <p style="font-size:13px;font-weight:700;color:${BRAND.ink};margin:0 0 8px;">What shipped</p>
@@ -74,7 +77,7 @@ Products are for laboratory research use only and are not for human or veterinar
     </table>
     ${trackingLineHtml}
     <div style="margin-top:22px;padding-top:20px;border-top:1px solid ${BRAND.line};">
-      <p style="font-size:13px;font-weight:700;color:${BRAND.ink};margin:0 0 6px;">Shipping to</p>
+      <p style="font-size:13px;font-weight:700;color:${BRAND.ink};margin:0 0 6px;">${input.localDelivery ? "Delivering to" : "Shipping to"}</p>
       <p style="font-size:14px;color:${BRAND.muted};margin:0;white-space:pre-line;line-height:1.5;">${addressText}</p>
     </div>
     <p style="font-size:13px;color:${BRAND.muted};margin:22px 0 0;line-height:1.6;">
@@ -83,7 +86,7 @@ Products are for laboratory research use only and are not for human or veterinar
   `;
 
   const html = wrapEmailHtml({
-    preheader: `Order #${input.orderNumber} has shipped${hasTracking ? " — tracking included" : ""}`,
+    preheader: `Order #${input.orderNumber} ${input.localDelivery ? "is out for delivery" : "has shipped"}${hasTracking ? " — tracking included" : ""}`,
     bodyHtml,
   });
 
@@ -97,7 +100,9 @@ Products are for laboratory research use only and are not for human or veterinar
       body: JSON.stringify({
         from: "RealAminos <confirmation@shoprealaminos.com>",
         to: input.toEmail,
-        subject: `Your Order Has Shipped — #${input.orderNumber}`,
+        subject: input.localDelivery
+          ? `Your Order Is Out for Delivery — #${input.orderNumber}`
+          : `Your Order Has Shipped — #${input.orderNumber}`,
         text,
         html,
       }),

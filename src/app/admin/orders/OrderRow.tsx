@@ -173,6 +173,11 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
             {order.shipping_phone}
             <br />
             {order.shipping_email}
+            {order.delivery_method === "local" && (
+              <div style={{ marginTop: 6, fontWeight: 800, color: "var(--orange-dark)" }}>
+                LOCAL DELIVERY — same or next day
+              </div>
+            )}
           </>
         ) : (
           <span style={{ color: "var(--muted)" }}>— no shipping info (pre-migration order) —</span>
@@ -194,7 +199,8 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
           <div style={{ fontSize: 11, color: "var(--ok)" }}>Zelle discount (-5%): -${order.zelle_discount_amount.toFixed(2)}</div>
         )}
         <div style={{ fontSize: 11, color: "var(--muted)" }}>
-          Shipping: {order.shipping_fee > 0 ? `$${order.shipping_fee.toFixed(2)}` : "Free"}
+          {order.delivery_method === "local" ? "Local delivery" : "Shipping"}:{" "}
+          {order.shipping_fee > 0 ? `$${order.shipping_fee.toFixed(2)}` : "Free"}
         </div>
         {order.points_redeemed > 0 && (
           <div style={{ fontSize: 11, color: "var(--ok)" }}>Redeemed — {order.points_redeemed} pts</div>
@@ -254,6 +260,12 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
               </div>
             )}
 
+            {order.delivery_method === "local" ? (
+              <p style={{ fontSize: 12, color: "var(--muted)", margin: "0 0 8px", lineHeight: 1.5 }}>
+                Local delivery — no label needed. Deliver it same or next day, then mark it Shipped
+                (customer gets an &ldquo;out for delivery&rdquo; email) and Delivered.
+              </p>
+            ) : (
             <div className="label-buy-widget">
               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 <input
@@ -305,6 +317,7 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
 
               {labelError && <p className="error" style={{ fontSize: 11, marginTop: 4 }}>{labelError}</p>}
             </div>
+            )}
 
             <div style={{ marginTop: 8 }}>
               <input

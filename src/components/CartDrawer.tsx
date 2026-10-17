@@ -7,6 +7,12 @@ import { useCart } from "@/lib/cart/CartContext";
 import { createClient } from "@/lib/supabase/client";
 import type { ShippingDetails } from "@/types/database";
 import { calculateShippingFee, FREE_SHIPPING_THRESHOLD } from "@/lib/shipping/rate";
+import {
+  LOCAL_DELIVERY_ORIGIN_LABEL,
+  LOCAL_DELIVERY_RADIUS_MILES,
+  LOCAL_DELIVERY_TIMEFRAME,
+  isArizona,
+} from "@/lib/shipping/localDeliveryConfig";
 import ZellePaymentStatus from "@/components/ZellePaymentStatus";
 import ZelleNoteGuide from "@/components/ZelleNoteGuide";
 import { getBulkPercent, bulkLineTotal } from "@/lib/promotions/bulkPricing";
@@ -112,6 +118,58 @@ export default function CartDrawer() {
   const [step, setStep] = useState<"cart" | "shipping" | "payment">("cart");
   const [shipping, setShipping] = useState<ShippingDetails>(EMPTY_SHIPPING);
 
+  // Free local delivery: Arizona only, within 50 miles of Surprise, AZ, same
+  // or next day. The address is checked automatically (via /api/delivery/check)
+  // as it's typed; the option only unlocks once the server says it qualifies,
+  // and every checkout route verifies it again before saving the order.
+  const [deliveryMethod, setDeliveryMethod] = useState<"ship" | "local">("ship");
+  const [localCheck, setLocalCheck] = useState<{ status: "idle" | "checking" | "ok" | "no"; message?: string }>({
+    status: "idle",
+  });
+  const shipLine1 = shipping.addressLine1;
+  const shipCity = shipping.city;
+  const shipState = shipping.state;
+  const shipZip = shipping.zip;
+
+  useEffect(() => {
+    const backToShipping = () => setDeliveryMethod((m) => (m === "local" ? "ship" : m));
+    if (!isArizona(shipState) || !/^\d{5}/.test(shipZip.trim()) || !shipLine1.trim() || !shipCity.trim()) {
+      setLocalCheck({ status: "idle" });
+      backToShipping();
+      return;
+    }
+    setLocalCheck({ status: "checking" });
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/delivery/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ addressLine1: shipLine1, city: shipCity, state: shipState, zip: shipZip }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (res.ok && body.eligible) {
+          setLocalCheck({ status: "ok", message: body.message });
+        } else {
+          setLocalCheck({
+            status: "no",
+            message: body.message ?? "Local delivery isn't available for this address.",
+          });
+          backToShipping();
+        }
+      } catch {
+        if (cancelled) return;
+        setLocalCheck({ status: "no", message: "Couldn't check your address right now — standard shipping is still available." });
+        backToShipping();
+      }
+    }, 700);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [shipLine1, shipCity, shipState, shipZip]);
+
   // Zelle is the only payment method, so it's selected by default. Once it
   // has actually created its (unpaid) order, the result is cached in
   // zelleOrder so re-opening this step doesn't create a second order.
@@ -153,7 +211,7 @@ export default function CartDrawer() {
   // in both checkout routes, so this preview always matches what actually
   // gets charged. Only shown on the shipping step, since there's no state
   // to estimate from yet on the cart step.
-  const shippingFee = calculateShippingFee(subtotal, shipping.state);
+  const shippingFee = deliveryMethod === "local" ? 0 : calculateShippingFee(subtotal, shipping.state);
   const grandTotal = total + shippingFee;
 
   // A cart made entirely of points-redeemed rewards can't check out on its
@@ -259,6 +317,8 @@ export default function CartDrawer() {
     })),
     shipping,
     discountCode: appliedDiscount?.code,
+    // Server re-verifies the address before honoring this.
+    deliveryMethod,
   });
 
   // Selecting Zelle immediately creates the real (unpaid) order — there's no
@@ -607,6 +667,93 @@ export default function CartDrawer() {
                   />
                 </div>
               </div>
+
+              <div style={{ marginTop: 18 }}>
+                <label style={{ marginBottom: 8, display: "block" }}>Delivery</label>
+
+                <label
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    alignItems: "flex-start",
+                    padding: "10px 12px",
+                    marginBottom: 8,
+                    borderRadius: 10,
+                    cursor: "pointer",
+                    border: `1px solid ${deliveryMethod === "ship" ? "#f97316" : "rgba(255,255,255,0.14)"}`,
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="delivery-method"
+                    checked={deliveryMethod === "ship"}
+                    onChange={() => setDeliveryMethod("ship")}
+                    style={{ width: "auto", marginTop: 3 }}
+                  />
+                  <span style={{ fontSize: 13.5 }}>
+                    <strong>Standard shipping</strong>
+                    <span style={{ color: "var(--muted)" }}>
+                      {" "}
+                      &mdash;{" "}
+                      {calculateShippingFee(subtotal, shipping.state) === 0
+                        ? "FREE"
+                        : money(calculateShippingFee(subtotal, shipping.state))}
+                    </span>
+                  </span>
+                </label>
+
+                <label
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    alignItems: "flex-start",
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    cursor: localCheck.status === "ok" ? "pointer" : "not-allowed",
+                    opacity: localCheck.status === "ok" ? 1 : 0.7,
+                    border: `1px solid ${deliveryMethod === "local" ? "#f97316" : "rgba(255,255,255,0.14)"}`,
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="delivery-method"
+                    checked={deliveryMethod === "local"}
+                    disabled={localCheck.status !== "ok"}
+                    onChange={() => setDeliveryMethod("local")}
+                    style={{ width: "auto", marginTop: 3 }}
+                  />
+                  <span style={{ fontSize: 13.5 }}>
+                    <strong>Local delivery &mdash; FREE</strong>
+                    <br />
+                    <span style={{ color: "var(--muted)", fontSize: 12.5 }}>
+                      Arizona only &middot; {LOCAL_DELIVERY_TIMEFRAME}
+                    </span>
+                    <br />
+                    <span
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color:
+                          localCheck.status === "ok"
+                            ? "var(--ok)"
+                            : localCheck.status === "no"
+                            ? "var(--danger)"
+                            : "var(--muted)",
+                      }}
+                    >
+                      {localCheck.status === "ok"
+                        ? `✓ ${localCheck.message}`
+                        : localCheck.status === "no"
+                        ? localCheck.message
+                        : localCheck.status === "checking"
+                        ? "Checking your address…"
+                        : isArizona(shipping.state)
+                        ? "Enter your full address to check availability."
+                        : `Available for Arizona addresses within ${LOCAL_DELIVERY_RADIUS_MILES} miles of ${LOCAL_DELIVERY_ORIGIN_LABEL}.`}
+                    </span>
+                  </span>
+                </label>
+              </div>
             </div>
 
             <div className="drawer-foot">
@@ -621,7 +768,11 @@ export default function CartDrawer() {
                 </div>
               )}
               <div className="subtotal-row">
-                <span>Shipping{!shipping.state.trim() && " (enter state below)"}</span>
+                <span>
+                  {deliveryMethod === "local"
+                    ? `Local delivery (${LOCAL_DELIVERY_TIMEFRAME.toLowerCase()})`
+                    : `Shipping${!shipping.state.trim() ? " (enter state below)" : ""}`}
+                </span>
                 <span style={shippingFee === 0 ? { color: "var(--ok)", fontWeight: 700 } : undefined}>
                   {shippingFee === 0 ? "FREE" : money(shippingFee)}
                 </span>
@@ -644,7 +795,12 @@ export default function CartDrawer() {
                 >
                   Back to Cart
                 </button>
-                <button type="submit" className="btn" style={{ flex: 2 }}>
+                <button
+                  type="submit"
+                  className="btn"
+                  style={{ flex: 2 }}
+                  disabled={deliveryMethod === "local" && localCheck.status !== "ok"}
+                >
                   Continue to Payment
                 </button>
               </div>

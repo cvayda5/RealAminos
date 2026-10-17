@@ -120,7 +120,9 @@ export default async function ThankYouPage({
               <p style={{ color: "var(--muted)", margin: 0 }}>
                 A confirmation email is on its way to{" "}
                 <strong style={{ color: "var(--ink)" }}>{order.shipping_email ?? user.email}</strong>.
-                We&apos;ll email your tracking number as soon as it ships.
+                {order.delivery_method === "local"
+                  ? "This is a free local delivery order — we'll deliver it same or next day and email you when it's on the way."
+                  : "We'll email your tracking number as soon as it ships."}
               </p>
             </>
           ) : (

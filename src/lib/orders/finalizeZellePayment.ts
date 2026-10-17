@@ -157,6 +157,7 @@ export async function finalizeOrderPayment(
       discountPercent: order.discount_percent,
       total: order.total ?? order.subtotal,
       shippingFee: order.shipping_fee,
+      localDelivery: order.delivery_method === "local",
       shipping: {
         name: order.shipping_name ?? "",
         addressLine1: order.shipping_address_line1 ?? "",

@@ -106,6 +106,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       orderNumber: data.order_number,
       items: (items ?? []).map((i) => ({ productName: i.product_name, size: i.size, qty: i.qty })),
       trackingNumber: data.tracking_number,
+      localDelivery: data.delivery_method === "local",
       shipping: {
         name: data.shipping_name ?? "",
         addressLine1: data.shipping_address_line1 ?? "",

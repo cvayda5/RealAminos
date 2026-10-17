@@ -24,6 +24,8 @@ type AdminOrderNotificationInput = {
   // nothing has been verified — the owner has to check Zelle activity for
   // this order number and amount and confirm it by hand.
   manualConfirm?: boolean;
+  // Free local delivery (Arizona, same or next day) — no label to buy, deliver it.
+  localDelivery?: boolean;
   items: { productName: string; size: string; qty: number }[];
   // What the customer actually owes/paid, all discounts and shipping
   // already folded in — the one number worth seeing at a glance.
@@ -63,7 +65,7 @@ ${amountLabel}: $${input.amountDue.toFixed(2)}
 ${zelleNotice ? `\n${zelleNotice}\n` : ""}
 Items: ${itemLines}
 
-Ship to: ${input.shipping.name} — ${input.shipping.city}, ${input.shipping.state}
+${input.localDelivery ? "LOCAL DELIVERY (same or next day) to" : "Ship to"}: ${input.shipping.name} — ${input.shipping.city}, ${input.shipping.state}
 
 View it at https://shoprealaminos.com/admin/orders`;
 
@@ -98,7 +100,7 @@ View it at https://shoprealaminos.com/admin/orders`;
       </tr>
     </table>
     <div style="margin-top:18px;padding-top:14px;border-top:1px solid ${BRAND.line};">
-      <p style="font-size:13px;font-weight:700;color:${BRAND.ink};margin:0 0 4px;">Ship to</p>
+      <p style="font-size:13px;font-weight:700;color:${BRAND.ink};margin:0 0 4px;">${input.localDelivery ? "LOCAL DELIVERY — same or next day" : "Ship to"}</p>
       <p style="font-size:14px;color:${BRAND.muted};margin:0;">
         ${input.shipping.name} — ${input.shipping.city}, ${input.shipping.state}
       </p>
@@ -130,7 +132,7 @@ View it at https://shoprealaminos.com/admin/orders`;
         to: ADMIN_NOTIFICATION_EMAIL,
         subject: `New Order — #${input.orderNumber} ($${input.amountDue.toFixed(2)})${
           input.manualConfirm ? " — verify Zelle" : ""
-        }`,
+        }${input.localDelivery ? " — LOCAL DELIVERY" : ""}`,
         text,
         html,
       }),

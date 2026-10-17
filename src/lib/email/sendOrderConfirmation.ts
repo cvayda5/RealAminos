@@ -23,6 +23,8 @@ type OrderConfirmationInput = {
   // hit the free-shipping threshold) — added on top of `total` for the
   // grand total shown here, same as everywhere else this order appears.
   shippingFee: number;
+  // Free local delivery order (Arizona, same or next day) instead of carrier shipping.
+  localDelivery?: boolean;
   shipping: {
     name: string;
     addressLine1: string;
@@ -73,8 +75,9 @@ export async function sendOrderConfirmationEmail(input: OrderConfirmationInput):
     : "";
 
   const grandTotal = input.total + input.shippingFee;
-  const shippingLineText = `Shipping: ${input.shippingFee > 0 ? "$" + input.shippingFee.toFixed(2) : "FREE"}\n`;
-  const shippingLineHtml = `<tr><td style="padding-top:6px;">Shipping</td><td style="padding-top:6px;text-align:right;">${
+  const shippingLabel = input.localDelivery ? "Local delivery (same or next day)" : "Shipping";
+  const shippingLineText = `${shippingLabel}: ${input.shippingFee > 0 ? "$" + input.shippingFee.toFixed(2) : "FREE"}\n`;
+  const shippingLineHtml = `<tr><td style="padding-top:6px;">${shippingLabel}</td><td style="padding-top:6px;text-align:right;">${
     input.shippingFee > 0 ? "$" + input.shippingFee.toFixed(2) : "FREE"
   }</td></tr>`;
 
@@ -87,7 +90,7 @@ ${itemRowsText}
 Subtotal: $${input.subtotal.toFixed(2)}
 ${discountLineText}${shippingLineText}Total: $${grandTotal.toFixed(2)}
 
-Shipping to:
+${input.localDelivery ? "Delivering to" : "Shipping to"}:
 ${addressText}
 
 You can check your order status any time on the My Orders page.
@@ -116,7 +119,7 @@ This confirms your payment went through and your order is now being processed. P
           };text-align:right;">$${grandTotal.toFixed(2)}</td></tr>
     </table>
     <div style="margin-top:26px;padding-top:20px;border-top:1px solid ${BRAND.line};">
-      <p style="font-size:13px;font-weight:700;color:${BRAND.ink};margin:0 0 6px;">Shipping to</p>
+      <p style="font-size:13px;font-weight:700;color:${BRAND.ink};margin:0 0 6px;">${input.localDelivery ? "Delivering to" : "Shipping to"}</p>
       <p style="font-size:14px;color:${BRAND.muted};margin:0;white-space:pre-line;line-height:1.5;">${addressText}</p>
     </div>
     <p style="font-size:13px;color:${BRAND.muted};margin:22px 0 0;line-height:1.6;">

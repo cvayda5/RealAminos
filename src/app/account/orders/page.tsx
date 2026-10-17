@@ -211,7 +211,9 @@ export default async function OrdersPage() {
                 </div>
               ) : (
                 <p style={{ fontSize: 13, color: "var(--muted)" }}>
-                  Tracking number will appear here once your order ships.
+                  {order.delivery_method === "local"
+                    ? "Free local delivery — same or next day."
+                    : "Tracking number will appear here once your order ships."}
                 </p>
               )}
 
@@ -257,7 +259,9 @@ export default async function OrdersPage() {
                     </>
                   )}
                   <tr>
-                    <td style={{ border: "none" }}>Shipping</td>
+                    <td style={{ border: "none" }}>
+                      {order.delivery_method === "local" ? "Local delivery (same or next day)" : "Shipping"}
+                    </td>
                     <td style={{ border: "none" }}>
                       {order.shipping_fee > 0 ? `$${order.shipping_fee.toFixed(2)}` : "FREE"}
                     </td>

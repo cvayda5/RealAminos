@@ -113,6 +113,10 @@ export interface Order {
   // 'card' (legacy, Whop), 'zelle', 'bitcoin' (BTCPay) or 'square' (card via Square). Defaults to 'card' for every order placed
   // before this column existed.
   payment_method: PaymentMethod;
+  // 'local' = delivered by us (free, Arizona, within 50 miles of Surprise,
+  // same or next day) — see 0033_local_delivery.sql. Missing/undefined on
+  // orders from before that migration, which all mean normal shipping.
+  delivery_method?: "ship" | "local";
   // How much the 5% Zelle discount knocked off (total + shipping_fee) for
   // this order. Always 0 for a 'card' order. Subtract this from
   // total + shipping_fee to get what the customer actually owes/paid via
@@ -254,6 +258,9 @@ export interface PendingCheckout {
 
 // Shape the cart posts to checkout — see src/app/api/checkout/whop/route.ts
 export interface NewOrderPayload {
+  // Asking for free local delivery. The server re-checks the address and
+  // ignores/rejects this if it doesn't qualify.
+  deliveryMethod?: "ship" | "local";
   items: {
     // For a normal paid line this is the product's id (product_variants is
     // then looked up by productId + size). For a reward line redeemed with

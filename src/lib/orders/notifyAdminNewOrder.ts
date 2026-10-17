@@ -51,6 +51,7 @@ export async function notifyAdminNewOrder(
       paymentMethod: order.payment_method,
       awaitingPayment: false,
       manualConfirm: order.payment_method === "zelle",
+      localDelivery: order.delivery_method === "local",
       items: order.order_items.map((i) => ({ productName: i.product_name, size: i.size, qty: i.qty })),
       amountDue: amount,
       shipping: {

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { NewOrderPayload, PointTransaction } from "@/types/database";
 import { calculateShippingFee } from "@/lib/shipping/rate";
+import { checkLocalDelivery } from "@/lib/shipping/localDelivery";
 import { resolveVariant } from "@/lib/inventory/resolveVariant";
 import { resolveDiscount } from "@/lib/checkout/resolveDiscount";
 import { bulkUnitPrice } from "@/lib/promotions/bulkPricing";
@@ -137,7 +138,22 @@ export async function POST(request: Request) {
 
   const subtotal = normalizedItems.reduce((sum, i) => sum + i.unitPrice * i.qty, 0);
   const pointsRedeemedTotal = [...reservationById.values()].reduce((sum, r) => sum + Math.abs(r.points), 0);
-  const shippingFee = calculateShippingFee(subtotal, shipping.state);
+  // Free local delivery (Arizona, within 50 miles of Surprise, AZ). Asked for
+  // by the browser but verified here — an address that doesn't qualify is
+  // rejected, never silently given free delivery.
+  const deliveryMethod: "ship" | "local" = body.deliveryMethod === "local" ? "local" : "ship";
+  if (deliveryMethod === "local") {
+    const local = await checkLocalDelivery({
+      addressLine1: shipping.addressLine1,
+      city: shipping.city,
+      state: shipping.state,
+      zip: shipping.zip,
+    });
+    if (!local.eligible) {
+      return NextResponse.json({ error: local.message }, { status: 400 });
+    }
+  }
+  const shippingFee = deliveryMethod === "local" ? 0 : calculateShippingFee(subtotal, shipping.state);
 
   // A customer-typed discount code, if any, applies on top of the subtotal
   // above — which already reflects the site-wide sale, if one's running,
@@ -177,6 +193,9 @@ export async function POST(request: Request) {
       total,
       points_redeemed: pointsRedeemedTotal,
       shipping_fee: shippingFee,
+      // Only sent for local orders, so normal checkouts keep working even
+      // before 0033_local_delivery.sql has been run.
+      ...(deliveryMethod === "local" ? { delivery_method: "local" } : {}),
       payment_method: "square",
       zelle_discount_amount: 0,
       status: "Awaiting Payment",
