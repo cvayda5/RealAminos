@@ -63,6 +63,12 @@ export default function SiteGate() {
   // other page keeps the gate as normal.
   if (pathname?.startsWith("/support")) return null;
 
+  // /shop is the bridge page (see src/app/shop/page.tsx): it shows no compounds,
+  // doses or prices, so the agreement waits until the visitor clicks through to
+  // the catalog (/shop/all). This is an exact match on purpose — every other
+  // page, including /shop/all and product pages, still shows the gate.
+  if (pathname === "/shop") return null;
+
   if (!ready || dismissed) return null;
 
   const allChecked = checks.age && checks.researchOnly && checks.businessPurpose && checks.terms;
