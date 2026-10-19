@@ -16,7 +16,12 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const CONVERSION_SEND_TO = "AW-16694066039/oB4GCIfOm5UdEPf2rJg-";
+// Purchase conversion actions — one per Google Ads account. The Google tag
+// for each account (AW-…) is configured in the root layout.
+const CONVERSION_SEND_TO = [
+  "AW-16694066039/oB4GCIfOm5UdEPf2rJg-",
+  "AW-18518215793/5YXaCOGezqEdEPGYlv5E",
+];
 const POLL_MS = 8000;
 
 interface Props {
@@ -44,12 +49,14 @@ export default function ThankYouTracker({ orderNumber, value, paid }: Props) {
     try {
       const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
       if (!gtag) return;
-      gtag("event", "conversion", {
-        send_to: CONVERSION_SEND_TO,
-        value,
-        currency: "USD",
-        transaction_id: orderNumber,
-      });
+      for (const sendTo of CONVERSION_SEND_TO) {
+        gtag("event", "conversion", {
+          send_to: sendTo,
+          value,
+          currency: "USD",
+          transaction_id: orderNumber,
+        });
+      }
       try {
         localStorage.setItem(key, "1");
       } catch {

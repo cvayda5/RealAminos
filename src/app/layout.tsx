@@ -117,7 +117,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16694066039" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.dataLayer = window.dataLayer || [];\nfunction gtag(){dataLayer.push(arguments);}\ngtag('js', new Date());\ngtag('config', 'AW-16694066039');`,
+            __html: `window.dataLayer = window.dataLayer || [];\nfunction gtag(){dataLayer.push(arguments);}\ngtag('js', new Date());\ngtag('config', 'AW-16694066039');\ngtag('config', 'AW-18518215793');`,
           }}
         />
         {/* Applies a saved "View as iPhone/Computer" choice (see
