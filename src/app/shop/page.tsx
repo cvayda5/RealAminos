@@ -124,11 +124,11 @@ export default function ShopBridgePage() {
         </div>
 
         <div className="br-fan" aria-hidden="true">
-          <BridgeVial uid="f1" lot="RA-0005" className="br-fan-v v1" />
-          <BridgeVial uid="f2" lot="RA-0004" className="br-fan-v v2" />
-          <BridgeVial uid="f3" lot="RA-0001" className="br-fan-v v3" />
-          <BridgeVial uid="f4" lot="RA-0002" className="br-fan-v v4" />
-          <BridgeVial uid="f5" lot="RA-0003" className="br-fan-v v5" />
+          <BridgeVial className="br-fan-v v1" />
+          <BridgeVial className="br-fan-v v2" />
+          <BridgeVial className="br-fan-v v3" />
+          <BridgeVial className="br-fan-v v4" />
+          <BridgeVial className="br-fan-v v5" />
         </div>
       </section>
 
@@ -232,9 +232,9 @@ export default function ShopBridgePage() {
               Shop All Peptides
             </Link>
           </div>
-          <BridgeVial uid="c1" lot="RA-0001" className="br-card-vial" />
+          <BridgeVial className="br-card-vial" />
         </div>
-        <div className="br-card br-card-light">
+        <div className="br-card br-card-dark">
           <div className="br-card-copy">
             <div className="br-kicker dark">Lab reports</div>
             <h3>View current COAs</h3>
@@ -255,7 +255,7 @@ export default function ShopBridgePage() {
 
       {/* final CTA */}
       <section className="br-final">
-        <BridgeVial uid="z1" lot="RA-0001" className="br-final-vial" />
+        <BridgeVial className="br-final-vial" />
         <div className="br-final-copy">
           <h2>Ready to get started?</h2>
           <p>Explore our research peptides or review COAs for available lots.</p>
