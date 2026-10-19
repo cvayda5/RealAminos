@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { BULK_TIERS } from "@/lib/promotions/bulkPricing";
 import BridgeVial from "./BridgeVial";
+import Icon from "./BridgeIcon";
 import "./bridge.css";
 
 // /shop is a "bridge" page: it tells the story (third-party testing, COAs,
@@ -17,75 +18,6 @@ export const metadata: Metadata = {
 };
 
 const CATALOG = "/shop/all";
-
-function Icon({ name }: { name: "doc" | "list" | "shield" | "flask" | "target" | "tag" | "box" }) {
-  const common = {
-    width: 40,
-    height: 40,
-    viewBox: "0 0 40 40",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 2,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    "aria-hidden": true,
-  };
-  switch (name) {
-    case "doc":
-      return (
-        <svg {...common}>
-          <path d="M10 5h14l7 7v23H10z" />
-          <path d="M24 5v7h7" />
-          <path d="M15 21h10M15 26h6" />
-          <circle cx="27" cy="29" r="6" fill="#fff" />
-          <path d="m24.2 29 2 2 3.4-3.6" />
-        </svg>
-      );
-    case "list":
-      return (
-        <svg {...common}>
-          <rect x="7" y="5" width="26" height="30" rx="3" />
-          <path d="M13 13h2M13 20h2M13 27h2M19 13h8M19 20h8M19 27h8" />
-        </svg>
-      );
-    case "shield":
-      return (
-        <svg {...common}>
-          <path d="M20 4 7 9v10c0 8 5.5 14 13 17 7.5-3 13-9 13-17V9z" />
-          <path d="m14 20 4.5 4.5L27 16" />
-        </svg>
-      );
-    case "flask":
-      return (
-        <svg {...common}>
-          <path d="M15 5h10M17 5v10L8 31a3 3 0 0 0 2.6 4.5h18.8A3 3 0 0 0 32 31L23 15V5" />
-          <path d="M12.5 26h15" />
-        </svg>
-      );
-    case "target":
-      return (
-        <svg {...common}>
-          <circle cx="20" cy="20" r="12" />
-          <circle cx="20" cy="20" r="3.5" />
-          <path d="M20 3v8M20 29v8M3 20h8M29 20h8" />
-        </svg>
-      );
-    case "tag":
-      return (
-        <svg {...common}>
-          <rect x="9" y="5" width="22" height="30" rx="2" />
-          <path d="M15 12v16M20 12v16M25 12v16" />
-        </svg>
-      );
-    case "box":
-      return (
-        <svg {...common}>
-          <path d="m20 4 14 7v18l-14 7-14-7V11z" />
-          <path d="m6 11 14 7 14-7M20 18v18" />
-        </svg>
-      );
-  }
-}
 
 export default function ShopBridgePage() {
   const top = BULK_TIERS[BULK_TIERS.length - 1];
@@ -124,11 +56,11 @@ export default function ShopBridgePage() {
         </div>
 
         <div className="br-fan" aria-hidden="true">
-          <BridgeVial className="br-fan-v v1" />
-          <BridgeVial className="br-fan-v v2" />
-          <BridgeVial className="br-fan-v v3" />
-          <BridgeVial className="br-fan-v v4" />
-          <BridgeVial className="br-fan-v v5" />
+          <BridgeVial className="br-fan-v v1" lot="RA-0004" />
+          <BridgeVial className="br-fan-v v2" lot="RA-0003" />
+          <BridgeVial className="br-fan-v v3" lot="RA-0001" />
+          <BridgeVial className="br-fan-v v4" lot="RA-0002" />
+          <BridgeVial className="br-fan-v v5" lot="RA-0005" />
         </div>
       </section>
 
@@ -232,7 +164,7 @@ export default function ShopBridgePage() {
               Shop All Peptides
             </Link>
           </div>
-          <BridgeVial className="br-card-vial" />
+          <BridgeVial className="br-card-vial" lot="RA-0001" />
         </div>
         <div className="br-card br-card-dark">
           <div className="br-card-copy">
@@ -255,7 +187,7 @@ export default function ShopBridgePage() {
 
       {/* final CTA */}
       <section className="br-final">
-        <BridgeVial className="br-final-vial" />
+        <BridgeVial className="br-final-vial" lot="RA-0001" />
         <div className="br-final-copy">
           <h2>Ready to get started?</h2>
           <p>Explore our research peptides or review COAs for available lots.</p>
