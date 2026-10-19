@@ -54,11 +54,11 @@ export default function LabBridgePage() {
         </div>
 
         <div className="br-fan" aria-hidden="true">
-          <BridgeVial className="br-fan-v v1" lot="RA-0004" />
-          <BridgeVial className="br-fan-v v2" lot="RA-0003" />
-          <BridgeVial className="br-fan-v v3" lot="RA-0001" />
-          <BridgeVial className="br-fan-v v4" lot="RA-0002" />
-          <BridgeVial className="br-fan-v v5" lot="RA-0005" />
+          <BridgeVial className="br-fan-v v1" />
+          <BridgeVial className="br-fan-v v2" />
+          <BridgeVial className="br-fan-v v3" />
+          <BridgeVial className="br-fan-v v4" />
+          <BridgeVial className="br-fan-v v5" />
         </div>
       </section>
 
@@ -191,7 +191,7 @@ export default function LabBridgePage() {
               Look Up a COA
             </Link>
           </div>
-          <BridgeVial className="br-card-vial" lot="RA-0001" />
+          <BridgeVial className="br-card-vial" />
         </div>
         <div className="br-card br-card-dark">
           <div className="br-card-copy">
@@ -214,7 +214,7 @@ export default function LabBridgePage() {
 
       {/* final CTA */}
       <section className="br-final">
-        <BridgeVial className="br-final-vial" lot="RA-0001" />
+        <BridgeVial className="br-final-vial" />
         <div className="br-final-copy">
           <h2>Ready to check a lot?</h2>
           <p>Look up a Certificate of Analysis, or explore our research peptides.</p>
