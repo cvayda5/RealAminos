@@ -25,7 +25,7 @@ export default function SiteFooter() {
         </div>
         <div>
           <h5>Shop</h5>
-          <Link href="/shop">All Compounds</Link>
+          <Link href="/shop/all">All Compounds</Link>
           <Link href="/lab">Lab Testing / COAs</Link>
         </div>
         <div>

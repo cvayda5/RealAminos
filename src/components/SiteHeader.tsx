@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 // mobile dropdown so the two never drift out of sync with each other.
 const PRIMARY_LINKS: { href: string; label: string }[] = [
   { href: "/", label: "Home" },
-  { href: "/shop", label: "Shop" },
+  { href: "/shop/all", label: "Shop" },
   { href: "/about", label: "About" },
   { href: "/affiliates", label: "Affiliates" },
   { href: "/points", label: "Points" },

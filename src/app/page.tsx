@@ -40,7 +40,7 @@ export default async function Home() {
           Analysis testing on every lot.
         </p>
         <div className="hx-ctas">
-          <Link href="/shop" className="btn">
+          <Link href="/shop/all" className="btn">
             Browse Research Compounds →
           </Link>
           <Link href="/lab" className="btn btn-ghost">
@@ -126,7 +126,7 @@ export default async function Home() {
               </h2>
               <p>A snapshot of our launch catalog — full list available in Shop.</p>
             </div>
-            <Link href="/shop" className="viewall">
+            <Link href="/shop/all" className="viewall">
               View all products →
             </Link>
           </div>

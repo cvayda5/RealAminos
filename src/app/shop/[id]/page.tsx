@@ -56,7 +56,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
       />
       <div className="breadcrumb">
-        <Link href="/shop">Shop</Link> / <span>{product.category}</span> / <span>{product.name}</span>
+        <Link href="/shop/all">Shop</Link> / <span>{product.category}</span> / <span>{product.name}</span>
       </div>
 
       <div className="pd-layout">

@@ -6,6 +6,7 @@ const BASE = "https://shoprealaminos.com";
 const PATHS = [
   "/",
   "/shop",
+  "/shop/all",
   "/lab",
   "/about",
   "/faq",

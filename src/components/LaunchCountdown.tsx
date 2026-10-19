@@ -57,7 +57,7 @@ export default function LaunchCountdown() {
         <span className="launch-countdown-live-text">
           🎉 We&rsquo;re live! Use code <strong>BETA20</strong> for 20% off site wide.
         </span>
-        <a href="/shop" className="launch-countdown-cta">
+        <a href="/shop/all" className="launch-countdown-cta">
           Shop Now →
         </a>
       </div>

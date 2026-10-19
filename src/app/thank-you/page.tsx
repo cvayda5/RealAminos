@@ -184,7 +184,7 @@ export default async function ThankYouPage({
             <Link className="btn" href="/account/orders">
               Track my order
             </Link>
-            <Link className="btn btn-outline" href="/shop">
+            <Link className="btn btn-outline" href="/shop/all">
               Keep shopping
             </Link>
           </div>

@@ -83,7 +83,7 @@ export default function AboutPage() {
             <a href="mailto:support@shoprealaminos.com" style={{ color: "var(--orange-dark)", fontWeight: 700 }}>
               support@shoprealaminos.com
             </a>
-            , or browse our <Link href="/shop" style={{ color: "var(--orange-dark)", fontWeight: 700 }}>current catalog</Link>.
+            , or browse our <Link href="/shop/all" style={{ color: "var(--orange-dark)", fontWeight: 700 }}>current catalog</Link>.
           </p>
         </div>
       </div>
