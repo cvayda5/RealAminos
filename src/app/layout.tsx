@@ -115,6 +115,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             this root layout, the same way the view-mode script and the
             Google site-verification meta tag (see `metadata` above) do. */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16694066039" />
+        {/* Second Google Ads account — its own gtag.js load, exactly as Google's install snippet shows. Its gtag('config') call is in the inline script below. */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18518215793" />
         <script
           dangerouslySetInnerHTML={{
             __html: `window.dataLayer = window.dataLayer || [];\nfunction gtag(){dataLayer.push(arguments);}\ngtag('js', new Date());\ngtag('config', 'AW-16694066039');\ngtag('config', 'AW-18518215793');`,
