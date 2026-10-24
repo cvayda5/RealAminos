@@ -105,7 +105,20 @@ export default async function ThankYouPage({
 
   return (
     <main className="site-main">
-      <ThankYouTracker orderNumber={order.order_number} value={amountPaid} paid={paid} />
+      <ThankYouTracker
+        orderNumber={order.order_number}
+        value={amountPaid}
+        paid={paid}
+        buyer={{
+          email: order.shipping_email ?? user.email,
+          phone: order.shipping_phone,
+          name: order.shipping_name,
+          street: order.shipping_address_line1,
+          city: order.shipping_city,
+          state: order.shipping_state,
+          zip: order.shipping_zip,
+        }}
+      />
 
       <div className="wrap" style={{ maxWidth: 680, paddingTop: 40 }}>
         <div className="card" style={{ textAlign: "center", padding: "36px 28px" }}>
