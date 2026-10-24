@@ -149,6 +149,14 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
             CARD (SQUARE)
           </div>
         )}
+        {order.ad_click_id && (
+          <div
+            title={`Google Ads click ID: ${order.ad_click_id}`}
+            style={{ fontSize: 10.5, fontWeight: 800, color: "var(--ok)", letterSpacing: ".03em", marginTop: 2 }}
+          >
+            AD CLICK ✓
+          </div>
+        )}
       </td>
       <td style={{ color: "var(--muted)", fontSize: 12.5 }}>
         {new Date(order.created_at).toLocaleDateString()}

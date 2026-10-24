@@ -117,6 +117,10 @@ export interface Order {
   // same or next day) — see 0033_local_delivery.sql. Missing/undefined on
   // orders from before that migration, which all mean normal shipping.
   delivery_method?: "ship" | "local";
+  // Google Ads click ID (gclid) from the _gcl_aw cookie at checkout, if the
+  // buyer arrived from an ad — see 0034_order_ad_click_id.sql. Null/missing
+  // for orders from before that migration or not from an ad.
+  ad_click_id?: string | null;
   // How much the 5% Zelle discount knocked off (total + shipping_fee) for
   // this order. Always 0 for a 'card' order. Subtract this from
   // total + shipping_fee to get what the customer actually owes/paid via

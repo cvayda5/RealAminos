@@ -6,6 +6,7 @@ import { calculateShippingFee } from "@/lib/shipping/rate";
 import { checkLocalDelivery } from "@/lib/shipping/localDelivery";
 import { resolveVariant } from "@/lib/inventory/resolveVariant";
 import { resolveDiscount } from "@/lib/checkout/resolveDiscount";
+import { readAdClickId } from "@/lib/ads/adClickId";
 import { bulkUnitPrice } from "@/lib/promotions/bulkPricing";
 import { createSquarePaymentLink, isSquareConfigured } from "@/lib/square/client";
 
@@ -213,6 +214,15 @@ export async function POST(request: Request) {
 
   if (orderError || !order) {
     return NextResponse.json({ error: orderError?.message ?? "Could not create order." }, { status: 500 });
+  }
+
+  // Remember which Google Ads click (if any) brought this customer, so the
+  // admin can tell ad orders apart and upload any Google didn't credit. A
+  // separate best-effort update on purpose: it must never stop a checkout, and
+  // it just does nothing until 0034_order_ad_click_id.sql has been run.
+  const adClickId = readAdClickId();
+  if (adClickId) {
+    await admin.from("orders").update({ ad_click_id: adClickId }).eq("id", order.id);
   }
 
   const { error: itemsError } = await supabase.from("order_items").insert(
