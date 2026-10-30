@@ -10,8 +10,11 @@
 // CONVERSION_NAME must match, letter for letter, the name of the "import"
 // conversion action in Google Ads.
 export const CONVERSION_NAME = "Purchase Upload";
-const TIME_ZONE = "America/Phoenix"; // Arizona — UTC-7 all year, no daylight saving
+// Arizona is UTC-7 all year (no daylight saving). The offset is written onto
+// every Conversion Time, so the file needs no separate time-zone line — Google's
+// Data Manager would read such a line as the column headings.
 const UTC_OFFSET_HOURS = -7;
+const UTC_OFFSET_TEXT = "-07:00";
 
 // The orders columns the builder needs.
 export const AD_ORDER_COLUMNS =
@@ -31,10 +34,10 @@ function pad(n: number) {
   return String(n).padStart(2, "0");
 }
 
-// "2026-10-30T20:05:11Z" → "2026-10-30 13:05:11" in Phoenix time.
+// "2026-10-30T20:05:11Z" → "2026-10-30 13:05:11-07:00" in Phoenix time.
 function phoenixTime(iso: string) {
   const d = new Date(new Date(iso).getTime() + UTC_OFFSET_HOURS * 3600 * 1000);
-  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}`;
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}${UTC_OFFSET_TEXT}`;
 }
 
 function csvCell(v: string) {
@@ -43,7 +46,6 @@ function csvCell(v: string) {
 
 export function buildAdConversionsCsv(orders: AdOrder[]): string {
   const lines = [
-    `Parameters:TimeZone=${TIME_ZONE}`,
     "Google Click ID,GBRAID,WBRAID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency,Order ID",
   ];
   for (const o of orders) {
