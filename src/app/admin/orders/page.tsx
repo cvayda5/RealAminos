@@ -75,6 +75,9 @@ export default async function AdminOrdersPage() {
             <Link href="/admin/products" className="btn btn-outline">
               Products
             </Link>
+            <a href="/api/admin/orders/ad-conversions" className="btn btn-outline" download>
+              Ad Conversions CSV
+            </a>
           </div>
         </div>
 

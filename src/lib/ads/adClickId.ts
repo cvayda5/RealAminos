@@ -11,6 +11,12 @@ import { cookies } from "next/headers";
 // request's cookies); call it inside a route handler.
 export function readAdClickId(): string | null {
   try {
+    // Our own first-party cookie (set by middleware from the landing URL) is the
+    // most reliable: it works even if the visitor's browser blocked Google's
+    // tag. gclid is stored plain; gbraid / wbraid are stored with a prefix.
+    const own = cookies().get("ra_ad_click")?.value;
+    if (own && /^((gbraid|wbraid):)?[A-Za-z0-9_-]{6,255}$/.test(own)) return own;
+
     let best: { ts: number; id: string } | null = null;
     for (const c of cookies().getAll()) {
       // `_gcl_aw` plus the per-tag variants Google sometimes writes
