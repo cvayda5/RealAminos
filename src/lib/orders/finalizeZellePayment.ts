@@ -7,7 +7,9 @@
 //    window from order creation
 //  - staff's "Mark Paid & Fulfill" button on /admin/orders
 //    (src/app/api/admin/orders/[id]/mark-paid/route.ts), which has no time
-//    limit
+//    limit — but note unpaid Zelle orders are deleted automatically 20
+//    minutes after creation (0035_expire_unpaid_zelle_orders.sql), so in
+//    practice staff can only mark an order paid inside that window
 //
 // Same side effects either way — stock decrement, points, status flip to
 // Processing, confirmation email — kept in one place so the two paths can

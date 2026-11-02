@@ -17,12 +17,6 @@ import ZellePaymentStatus from "@/components/ZellePaymentStatus";
 import ZelleNoteGuide from "@/components/ZelleNoteGuide";
 import { getBulkPercent, bulkLineTotal } from "@/lib/promotions/bulkPricing";
 
-// Kept in sync by eye with ZELLE_DISCOUNT_RATE in
-// src/app/api/checkout/zelle/route.ts — this is display-only (the server
-// recomputes the real discount itself), so a mismatch here would just show
-// the wrong preview number, not actually charge the wrong amount.
-const ZELLE_DISCOUNT_PERCENT = 5;
-
 interface ZelleOrderResult {
   orderId: string;
   orderNumber: string;
@@ -849,10 +843,9 @@ export default function CartDrawer() {
                   cursor: "pointer",
                 }}
               >
-                <strong>🏦 Zelle</strong>{" "}
-                <span style={{ color: "var(--ok)", fontWeight: 700, fontSize: 12.5 }}>Save {ZELLE_DISCOUNT_PERCENT}%</span>
+                <strong>🏦 Zelle</strong>
                 <div style={{ fontSize: 12.5, color: "var(--muted)" }}>
-                  {money(grandTotal * (1 - ZELLE_DISCOUNT_PERCENT / 100))} — manual payment, confirmed by staff
+                  {money(zelleOrder?.amountDue ?? grandTotal)} — manual payment, confirmed by staff
                 </div>
               </div>
 

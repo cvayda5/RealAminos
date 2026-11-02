@@ -49,7 +49,13 @@ export async function POST(request: Request, { params }: { params: { id: string 
   // Returning the same "not found" for a missing order and someone else's
   // order avoids confirming/denying that a given order id exists at all.
   if (fetchError || !order || order.user_id !== user.id) {
-    return NextResponse.json({ error: "Order not found." }, { status: 404 });
+    return NextResponse.json(
+      {
+        error:
+          "This order no longer exists — unpaid Zelle orders are cancelled automatically after 20 minutes. If you already sent the payment, email info@shoprealaminos.com with your order number.",
+      },
+      { status: 404 }
+    );
   }
 
   if (order.payment_method !== "zelle" || order.status !== "Awaiting Payment") {
@@ -63,7 +69,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return NextResponse.json(
       {
         error:
-          "The 20-minute window to confirm this Zelle payment has passed. If you already sent it, email info@shoprealaminos.com with your order number and we'll sort it out.",
+          "The 20-minute window to confirm this Zelle payment has passed, so this order is being cancelled. If you already sent it, email info@shoprealaminos.com with your order number and we'll sort it out.",
       },
       { status: 400 }
     );

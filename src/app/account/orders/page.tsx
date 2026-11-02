@@ -180,7 +180,7 @@ export default async function OrdersPage() {
                       <strong>
                         ${((order.total ?? order.subtotal) + order.shipping_fee - (order.zelle_discount_amount ?? 0)).toFixed(2)}
                       </strong>{" "}
-                      via Zelle using the QR code above (5% discount already applied).
+                      via Zelle using the QR code above.
                     </p>
                     <p style={{ margin: "0 0 4px", fontSize: 14 }}>
                       You MUST put <strong>{order.order_number}</strong> in the Zelle payment note.

@@ -3,7 +3,7 @@
 
 // We deliver ourselves, free, to Arizona addresses within this many miles
 // (straight-line) of Surprise, AZ.
-export const LOCAL_DELIVERY_RADIUS_MILES = 50;
+export const LOCAL_DELIVERY_RADIUS_MILES = 20;
 export const LOCAL_DELIVERY_ORIGIN_LABEL = "Surprise, AZ";
 export const LOCAL_DELIVERY_TIMEFRAME = "Same or next day";
 

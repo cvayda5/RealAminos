@@ -9,10 +9,11 @@ import { resolveDiscount } from "@/lib/checkout/resolveDiscount";
 import { readAdClickId } from "@/lib/ads/adClickId";
 import { bulkUnitPrice } from "@/lib/promotions/bulkPricing";
 
-// 5% off for choosing Zelle over a card — in exchange for us not getting
-// instant payment confirmation the way Whop gives us. See the big comment
-// on 0013_zelle_payments.sql for how this fits into the order lifecycle.
-const ZELLE_DISCOUNT_RATE = 0.05;
+// Zelle no longer carries a discount — it costs the same as card and Bitcoin.
+// The zelle_discount_amount column stays (always 0 for new orders) so older
+// orders that did get the old 5% off still display and total correctly. See
+// the big comment on 0013_zelle_payments.sql for how this fits into the order
+// lifecycle.
 
 // POST /api/checkout/zelle — validates the cart exactly the same way
 // /api/checkout/whop does (same stock check, same reward-reservation
@@ -175,8 +176,8 @@ export async function POST(request: Request) {
 
   const total = Math.round(subtotal * (1 - discountPercent / 100) * 100) / 100;
   const preZelleGrandTotal = Math.round((total + shippingFee) * 100) / 100;
-  const zelleDiscountAmount = Math.round(preZelleGrandTotal * ZELLE_DISCOUNT_RATE * 100) / 100;
-  const amountDue = Math.round((preZelleGrandTotal - zelleDiscountAmount) * 100) / 100;
+  const zelleDiscountAmount = 0;
+  const amountDue = preZelleGrandTotal;
 
   // Insert under the customer's own session — orders_insert_own (see
   // 0001_init.sql) is what actually enforces user_id can't be spoofed. This
@@ -245,11 +246,9 @@ export async function POST(request: Request) {
 
   // Link the reservations to the real order right away (unlike Whop, which
   // waits for payment confirmation) — this order already exists for real,
-  // it's just unpaid. Known tradeoff, not fixed in this pass: if this
-  // specific Zelle order is never paid and never fulfilled, these points
-  // are gone rather than automatically refunded — same as if the reward had
-  // actually been used. A "Cancel & Refund" admin action would close that
-  // gap later if it comes up.
+  // it's just unpaid. If the customer never confirms payment, the order is
+  // deleted automatically after 20 minutes (see 0035_expire_unpaid_zelle_orders.sql)
+  // and these reservations are released back to them.
   if (rewardTxIds.length > 0) {
     await admin.from("point_transactions").update({ order_id: order.id }).in("id", rewardTxIds);
   }

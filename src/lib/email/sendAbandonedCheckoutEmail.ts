@@ -29,7 +29,7 @@ const COPY: Record<AbandonedStage, { subject: string; heading: string; body: str
   2: {
     subject: "Your RealAminos cart is waiting",
     heading: "Your cart is still here",
-    body: "Just a reminder that you have items waiting. Paying by Zelle takes an extra 5% off, and orders of $200 or more ship free. Questions about anything? Just reply to this email.",
+    body: "Just a reminder that you have items waiting. Orders of $200 or more ship free. Questions about anything? Just reply to this email.",
   },
   3: {
     subject: "Last reminder about your cart",

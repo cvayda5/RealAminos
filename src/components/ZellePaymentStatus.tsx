@@ -85,13 +85,14 @@ export default function ZellePaymentStatus({ orderId, createdAt, onPaid }: Props
       {!expired ? (
         <p style={{ margin: "0 0 8px", fontSize: 12.5, color: "var(--muted)" }}>
           Send the Zelle payment within <strong>{formatRemaining(remaining)}</strong>, then tap
-          the button below — that&apos;s what actually confirms your order.
+          the button below — that&apos;s what actually confirms your order. If you haven&apos;t
+          confirmed by then, the order is cancelled automatically.
         </p>
       ) : (
         <p style={{ margin: "0 0 8px", fontSize: 12.5, fontWeight: 700, color: "var(--danger)" }}>
-          The 20-minute window to confirm this payment has passed. If you already sent it, email{" "}
-          <strong>info@shoprealaminos.com</strong> with your order number and we&apos;ll sort it
-          out.
+          The 20-minute window has passed, so this order is being cancelled automatically. If you
+          already sent the payment, email <strong>info@shoprealaminos.com</strong> with your order
+          number and we&apos;ll sort it out — otherwise just place a new order.
         </p>
       )}
       <button
