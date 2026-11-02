@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { OrderStatus, OrderWithItems } from "@/types/database";
 
@@ -20,6 +20,16 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
   const router = useRouter();
   const [status, setStatus] = useState<OrderStatus>(order.status);
   const [tracking, setTracking] = useState(order.tracking_number ?? "");
+  // These start from the order row, but the row re-renders with new data after
+  // a label purchase or save (router.refresh) — keep the box and the status
+  // dropdown in step with it so a freshly bought label's tracking number shows
+  // up right away instead of staying blank until a full page reload.
+  useEffect(() => {
+    setTracking(order.tracking_number ?? "");
+  }, [order.tracking_number]);
+  useEffect(() => {
+    setStatus(order.status);
+  }, [order.status]);
   const [saving, setSaving] = useState(false);
   const [markingPaid, setMarkingPaid] = useState(false);
   const [markPaidError, setMarkPaidError] = useState<string | null>(null);
@@ -82,6 +92,10 @@ export default function OrderRow({ order }: { order: OrderWithItems }) {
       return;
     }
     setRates(null);
+    // Fill the tracking box (and status) straight from the purchase response —
+    // the server already saved both on the order.
+    if (body.order?.tracking_number) setTracking(body.order.tracking_number);
+    if (body.order?.status) setStatus(body.order.status);
     if (body.labelUrl) window.open(body.labelUrl, "_blank");
     router.refresh();
   }
