@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { ProductWithVariants } from "@/types/database";
 import ProductCard from "@/components/ProductCard";
+import ComingSoon from "@/components/ComingSoon";
 import { BULK_TIERS } from "@/lib/promotions/bulkPricing";
 
 // Server Component: reads the real product catalog straight from Postgres.
@@ -100,6 +101,9 @@ export default async function ShopCatalogPage({ searchParams }: { searchParams: 
             <ProductCard key={p.id} product={p} />
           ))}
         </div>
+
+        {/* Hidden while a category chip is selected so filtered views stay clean. */}
+        {!activeCategory && <ComingSoon />}
       </main>
     </>
   );
