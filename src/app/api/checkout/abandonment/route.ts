@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as Partial<NewOrderPayload>;
   const shipping = body.shipping;
   const paidLines = (body.items ?? [])
-    .filter((i) => i && !i.pointTransactionId && Number.isFinite(i.qty) && i.qty > 0)
+    .filter((i) => i && !i.pointTransactionId && !i.freeBacWater && Number.isFinite(i.qty) && i.qty > 0)
     .slice(0, 30);
 
   if (paidLines.length === 0 || !shipping?.name?.trim() || !shipping.addressLine1?.trim()) {

@@ -8,6 +8,7 @@ import { resolveVariant } from "@/lib/inventory/resolveVariant";
 import { resolveDiscount } from "@/lib/checkout/resolveDiscount";
 import { readAdClickId } from "@/lib/ads/adClickId";
 import { bulkUnitPrice } from "@/lib/promotions/bulkPricing";
+import { buildFreeBacItem, extractFreeBacRequest } from "@/lib/promotions/freeBacWater";
 import { createBtcpayInvoice, isBtcpayConfigured } from "@/lib/btcpay/client";
 
 const SITE_URL = "https://shoprealaminos.com";
@@ -42,6 +43,10 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json()) as NewOrderPayload;
+  // Free "every $100" BAC Water: pulled out of the cart lines up front so the
+  // rest of this route only sees real paid / points lines. How many are
+  // actually granted is decided below, once the order total is known.
+  const requestedFreeBac = extractFreeBacRequest(body);
   if (!body.items?.length) {
     return NextResponse.json({ error: "Order must include at least one item." }, { status: 400 });
   }
@@ -180,6 +185,18 @@ export async function POST(request: Request) {
   }
 
   const total = Math.round(subtotal * (1 - discountPercent / 100) * 100) / 100;
+
+  // One free BAC Water per full $100 of product total (after discounts, before
+  // shipping) — decided here, never from what the browser sent.
+  const freeBacItem = await buildFreeBacItem(admin, {
+    requestedQty: requestedFreeBac,
+    qualifyingTotal: total,
+    paidLines: body.items.map((i) => ({
+      productId: resolvedProductIdByLine.get(i.pointTransactionId ?? `${i.productId}::${i.size}`) ?? "",
+      size: i.size,
+      qty: i.qty,
+    })),
+  });
   // No Bitcoin discount: what's due is exactly total + shipping.
   const amountDue = Math.round((total + shippingFee) * 100) / 100;
 
@@ -226,16 +243,28 @@ export async function POST(request: Request) {
     await admin.from("orders").update({ ad_click_id: adClickId }).eq("id", order.id);
   }
 
-  const { error: itemsError } = await supabase.from("order_items").insert(
-    normalizedItems.map((i) => ({
+  const { error: itemsError } = await supabase.from("order_items").insert([
+    ...normalizedItems.map((i) => ({
       order_id: order.id,
       product_name: i.productName,
       size: i.size,
       qty: i.qty,
       unit_price: i.unitPrice,
       product_id: resolvedProductIdByLine.get(i.pointTransactionId ?? `${i.productId}::${i.size}`) ?? null,
-    }))
-  );
+    })),
+    ...(freeBacItem
+      ? [
+          {
+            order_id: order.id,
+            product_name: freeBacItem.productName,
+            size: freeBacItem.size,
+            qty: freeBacItem.qty,
+            unit_price: 0,
+            product_id: freeBacItem.productId,
+          },
+        ]
+      : []),
+  ]);
 
   if (itemsError) {
     // Best-effort cleanup so a failed item insert doesn't leave an empty

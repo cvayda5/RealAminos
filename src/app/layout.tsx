@@ -5,6 +5,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import SiteGate from "@/components/SiteGate";
 import CartDrawer from "@/components/CartDrawer";
+import PromoBanner from "@/components/PromoBanner";
 
 const SITE_URL = "https://shoprealaminos.com";
 const SITE_TITLE = "RealAminos — Research Compounds";
@@ -140,6 +141,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
         <CartProvider>
           <SiteGate />
+          <PromoBanner />
           <SiteHeader userEmail={user?.email ?? null} />
           {/* Every page renders inside .dark-page — the site-wide dark theme
               surface (background glows + text color) defined in globals.css. */}

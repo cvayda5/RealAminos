@@ -1,11 +1,35 @@
-// Unused — the time-boxed site-wide sale banner this rendered was retired
-// (see chat: struck-through "was" pricing is now a stored compare_at_price
-// per variant, shown directly on product cards/pages, with no scheduled
-// campaign or banner needed). No longer imported anywhere (removed from
-// src/app/layout.tsx). Left as a harmless no-op rather than deleted because
-// this was pushed live still importing the old siteSale.ts exports that no
-// longer exist, which broke the Vercel build — safe to delete this file
-// entirely whenever convenient.
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { FREE_BAC_THRESHOLD } from "@/lib/promotions/freeBacWater";
+
+// Slim site-wide banner above the header: every $100 spent earns a free
+// bacteriostatic water, redeemed in the cart at checkout (see
+// lib/promotions/freeBacWater.ts). Hidden on /shop — the ad landing page is
+// intentionally kept exactly as-is.
 export default function PromoBanner() {
-  return null;
+  const pathname = usePathname();
+  if (pathname === "/shop" || pathname === "/shop/") return null;
+
+  return (
+    <div
+      role="note"
+      style={{
+        background: "var(--orange, #f97316)",
+        color: "#111",
+        textAlign: "center",
+        fontSize: 13.5,
+        fontWeight: 700,
+        letterSpacing: 0.1,
+        padding: "9px 16px",
+        lineHeight: 1.35,
+      }}
+    >
+      🎁 Free Bacteriostatic Water with every ${FREE_BAC_THRESHOLD} you spend — redeem it in your cart at checkout.{" "}
+      <Link href="/shop/all" style={{ color: "#111", textDecoration: "underline", whiteSpace: "nowrap" }}>
+        Shop now
+      </Link>
+    </div>
+  );
 }

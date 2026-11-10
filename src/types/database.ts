@@ -77,6 +77,9 @@ export interface CartLine {
   isReward?: boolean;
   pointsCost?: number;
   pointTransactionId?: string;
+  // The free BAC Water earned with every $100 spent (see
+  // lib/promotions/freeBacWater.ts). Always $0; never merges with a paid line.
+  isPromo?: boolean;
 }
 
 export interface Order {
@@ -282,6 +285,10 @@ export interface NewOrderPayload {
     // side — a tampered unitPrice in the request body is never trusted for
     // a reward line, same reasoning as the discount code below.
     pointTransactionId?: string;
+    // Marks the free BAC Water line earned with every $100 spent. Only the
+    // quantity is read from it — the server decides what's actually given and
+    // how many were earned (lib/promotions/freeBacWater.ts).
+    freeBacWater?: boolean;
   }[];
   shipping: ShippingDetails;
   // Optional — only the code string is trusted from the client. The API

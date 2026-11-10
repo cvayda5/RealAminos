@@ -18,6 +18,8 @@ interface CartContextValue {
   // same vial redeemed twice) and would collide on that pair alone.
   removeItem: (line: CartLine) => void;
   clear: () => void;
+  // Sets (or, with null, removes) the free "every $100" BAC Water line.
+  setPromoLine: (line: CartLine | null) => void;
   subtotal: number;
   count: number;
   isDrawerOpen: boolean;
@@ -29,7 +31,8 @@ interface CartContextValue {
 // already unique per redemption, so it's used as-is; a normal line falls
 // back to productId+size, which is what lets two adds of the same
 // product/size merge into one line with addItem below.
-function lineKey(line: Pick<CartLine, "productId" | "size" | "pointTransactionId">) {
+function lineKey(line: Pick<CartLine, "productId" | "size" | "pointTransactionId" | "isPromo">) {
+  if (line.isPromo) return "promo::free-bac-water";
   return line.pointTransactionId ?? `${line.productId}::${line.size}`;
 }
 
@@ -63,8 +66,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // Reward lines never merge — each redemption is its own reservation
       // (its own pointTransactionId) even if it happens to be the same
       // product/size as another line already in the cart.
-      if (!line.isReward) {
-        const existing = prev.find((i) => !i.isReward && i.productId === line.productId && i.size === line.size);
+      if (!line.isReward && !line.isPromo) {
+        const existing = prev.find((i) => !i.isReward && !i.isPromo && i.productId === line.productId && i.size === line.size);
         if (existing) {
           return prev.map((i) => (i === existing ? { ...i, qty: i.qty + line.qty } : i));
         }
@@ -102,6 +105,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
   }
 
+  // Replaces the free BAC Water line (there's only ever one). Doesn't open
+  // the drawer — the customer is already looking at it.
+  function setPromoLine(line: CartLine | null) {
+    setItems((prev) => {
+      const without = prev.filter((i) => !i.isPromo);
+      return line ? [...without, { ...line, isPromo: true, unitPrice: 0 }] : without;
+    });
+  }
+
   // Each paid line is priced with the quantity (bulk) discount for its
   // current qty — see lib/promotions/bulkPricing.ts. Reward lines (redeemed
   // with points) are free and never discounted. The tier is computed from the
@@ -110,7 +122,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const subtotal =
     Math.round(
       items.reduce(
-        (sum, i) => sum + (i.isReward || i.pointTransactionId ? i.unitPrice * i.qty : bulkLineTotal(i.unitPrice, i.qty)),
+        (sum, i) =>
+          sum + (i.isPromo ? 0 : i.isReward || i.pointTransactionId ? i.unitPrice * i.qty : bulkLineTotal(i.unitPrice, i.qty)),
         0
       ) * 100
     ) / 100;
@@ -123,6 +136,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addItem,
         removeItem,
         clear,
+        setPromoLine,
         subtotal,
         count,
         isDrawerOpen,

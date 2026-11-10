@@ -16,6 +16,8 @@ import {
 import ZellePaymentStatus from "@/components/ZellePaymentStatus";
 import ZelleNoteGuide from "@/components/ZelleNoteGuide";
 import { getBulkPercent, bulkLineTotal } from "@/lib/promotions/bulkPricing";
+import { FREE_BAC_THRESHOLD, freeBacEntitlement } from "@/lib/promotions/freeBacWater";
+import { useFreeBacProduct } from "@/lib/promotions/useFreeBacProduct";
 
 interface ZelleOrderResult {
   orderId: string;
@@ -55,7 +57,8 @@ const EMPTY_SHIPPING: ShippingDetails = {
 };
 
 export default function CartDrawer() {
-  const { items, removeItem, clear, subtotal, isDrawerOpen, closeDrawer } = useCart();
+  const { items, removeItem, clear, setPromoLine, subtotal, isDrawerOpen, closeDrawer } = useCart();
+  const { product: freeBacProduct, loaded: freeBacLoaded } = useFreeBacProduct();
   const router = useRouter();
   const [waiverChecked, setWaiverChecked] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -212,7 +215,47 @@ export default function CartDrawer() {
   // own — enforced again server-side in /api/orders, this just gives the
   // customer an explanation before they get all the way to the shipping
   // step.
-  const hasPaidItem = items.some((i) => !i.isReward);
+  const hasPaidItem = items.some((i) => !i.isReward && !i.isPromo);
+
+  // Free BAC Water: one per full $100 of product total (after bulk pricing and
+  // any code, before shipping). The cart only OFFERS it — the checkout routes
+  // re-decide how many were earned (lib/promotions/freeBacWater.ts). Capped by
+  // stock, counting any of the same item the customer is already buying.
+  const promoLine = items.find((i) => i.isPromo);
+  const freeBacEarned = freeBacEntitlement(total);
+  const freeBacAlreadyBuying = freeBacProduct
+    ? items
+        .filter((i) => !i.isPromo && !i.isReward && i.productId === freeBacProduct.productId && i.size === freeBacProduct.size)
+        .reduce((sum, i) => sum + i.qty, 0)
+    : 0;
+  const freeBacAllowed = freeBacProduct
+    ? Math.max(0, Math.min(freeBacEarned, freeBacProduct.stock - freeBacAlreadyBuying))
+    : 0;
+  const freeBacToNext = FREE_BAC_THRESHOLD - (Math.round(total * 100) % (FREE_BAC_THRESHOLD * 100)) / 100;
+
+  // Keeps an added free line in step with what's earned: it shrinks or goes
+  // away if the cart drops below the threshold (items removed, a code applied),
+  // and grows if the customer keeps shopping while it's in the cart.
+  useEffect(() => {
+    if (!promoLine || !freeBacLoaded) return;
+    if (!freeBacProduct || freeBacAllowed <= 0) {
+      setPromoLine(null);
+    } else if (promoLine.qty !== freeBacAllowed) {
+      setPromoLine({ ...promoLine, qty: freeBacAllowed });
+    }
+  }, [promoLine, freeBacAllowed, freeBacProduct, freeBacLoaded, setPromoLine]);
+
+  function redeemFreeBac() {
+    if (!freeBacProduct || freeBacAllowed <= 0) return;
+    setPromoLine({
+      productId: freeBacProduct.productId,
+      productName: freeBacProduct.productName,
+      size: freeBacProduct.size,
+      unitPrice: 0,
+      qty: freeBacAllowed,
+      isPromo: true,
+    });
+  }
 
   function money(n: number) {
     return "$" + n.toFixed(2);
@@ -308,6 +351,7 @@ export default function CartDrawer() {
       qty: i.qty,
       unitPrice: i.unitPrice,
       pointTransactionId: i.pointTransactionId,
+      ...(i.isPromo ? { freeBacWater: true } : {}),
     })),
     shipping,
     discountCode: appliedDiscount?.code,
@@ -461,14 +505,14 @@ export default function CartDrawer() {
                 </div>
               ) : (
                 items.map((item) => (
-                  <div className="cart-line" key={item.pointTransactionId ?? `${item.productId}-${item.size}`}>
-                    <div className="thumb-sm">{item.isReward ? "🎁" : "🧪"}</div>
+                  <div className="cart-line" key={item.isPromo ? "promo-free-bac" : item.pointTransactionId ?? `${item.productId}-${item.size}`}>
+                    <div className="thumb-sm">{item.isReward || item.isPromo ? "🎁" : "🧪"}</div>
                     <div className="info">
                       <h5>{item.productName}</h5>
                       <span>
                         {item.size} × {item.qty}
                       </span>
-                      {!item.isReward && !item.pointTransactionId && getBulkPercent(item.qty) > 0 && (
+                      {!item.isReward && !item.isPromo && !item.pointTransactionId && getBulkPercent(item.qty) > 0 && (
                         <>
                           <br />
                           <span style={{ color: "var(--ok)", fontWeight: 700 }}>
@@ -482,20 +526,61 @@ export default function CartDrawer() {
                           <span style={{ color: "var(--ok)" }}>Redeemed with {item.pointsCost} points</span>
                         </>
                       )}
+                      {item.isPromo && (
+                        <>
+                          <br />
+                          <span style={{ color: "var(--ok)", fontWeight: 700 }}>Free with every ${FREE_BAC_THRESHOLD} spent</span>
+                        </>
+                      )}
                       <br />
                       <button className="link-btn" onClick={() => removeItem(item)}>
                         Remove
                       </button>
                     </div>
                     <div className="amt">
-                      {money(
-                        item.isReward || item.pointTransactionId
-                          ? item.unitPrice * item.qty
-                          : bulkLineTotal(item.unitPrice, item.qty)
-                      )}
+                      {item.isPromo
+                        ? "FREE"
+                        : money(
+                            item.isReward || item.pointTransactionId
+                              ? item.unitPrice * item.qty
+                              : bulkLineTotal(item.unitPrice, item.qty)
+                          )}
                     </div>
                   </div>
                 ))
+              )}
+
+              {items.length > 0 && hasPaidItem && freeBacProduct && !promoLine && (
+                <div
+                  style={{
+                    margin: "14px 0 4px",
+                    padding: "12px 14px",
+                    borderRadius: 12,
+                    border: "1px dashed var(--orange)",
+                    background: "rgba(249,115,22,0.08)",
+                    fontSize: 13.5,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {freeBacAllowed > 0 ? (
+                    <>
+                      <strong>🎁 You earned {freeBacAllowed} free {freeBacProduct.productName}!</strong>
+                      <div style={{ color: "var(--muted)", margin: "2px 0 10px" }}>
+                        Every ${FREE_BAC_THRESHOLD} you spend gets you one free ({freeBacProduct.size}).
+                      </div>
+                      <button type="button" className="btn" onClick={redeemFreeBac}>
+                        Add my free {freeBacProduct.productName}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <strong>🎁 Free {freeBacProduct.productName} with every ${FREE_BAC_THRESHOLD} spent</strong>
+                      <div style={{ color: "var(--muted)", marginTop: 2 }}>
+                        Add {money(freeBacToNext)} more to unlock yours.
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
             </div>
 
