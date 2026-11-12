@@ -40,25 +40,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // keeps delivering an in-progress one. See src/lib/email/marketing/.
 async function run(request: Request) {
   if (!authorized(request)) {
-    // TEMPORARY DIAGNOSTIC (remove once the secret works): lengths only, never
-    // the secret itself. Lets us see whether the deployed CRON_SECRET is the
-    // value the schedule is sending.
-    const configured = process.env.CRON_SECRET ?? "";
-    const header = request.headers.get("authorization") ?? "";
-    return NextResponse.json(
-      {
-        error: "Unauthorized.",
-        debug: {
-          secretConfigured: configured.length > 0,
-          configuredLength: configured.length,
-          expectedHeaderLength: configured.length + 7,
-          receivedHeaderLength: header.length,
-          receivedStartsWithBearer: header.startsWith("Bearer "),
-          configuredHasWhitespaceAtEnds: configured !== configured.trim(),
-        },
-      },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
   if (!process.env.RESEND_API_KEY) {
     return NextResponse.json({ ok: false, error: "RESEND_API_KEY is not set." }, { status: 500 });
