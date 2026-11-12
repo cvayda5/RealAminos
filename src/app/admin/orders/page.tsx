@@ -81,6 +81,9 @@ export default async function AdminOrdersPage() {
             <Link href="/admin/coming-soon" className="btn btn-outline">
               Coming Soon Signups
             </Link>
+            <Link href="/admin/email-marketing" className="btn btn-outline">
+              Email Marketing
+            </Link>
           </div>
         </div>
 
