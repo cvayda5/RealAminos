@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -33,8 +32,10 @@ function money(n: number) {
 //              link's redirect_url — see /api/checkout/square).
 // URL: https://shoprealaminos.com/thank-you?order=<order id>
 //
-// The order is read with the customer's own session, so Row Level Security
-// means only the person who placed it can ever see it. The Google Ads
+// A signed-in customer's order is read with their own session, so Row Level
+// Security means only the person who placed it can see it. A guest order (no
+// account) is found by its order id — an unguessable UUID that's only ever sent
+// to the person who placed it (payment redirect, their own browser). The Google Ads
 // conversion (ThankYouTracker) only fires once the order is out of
 // "Awaiting Payment".
 export default async function ThankYouPage({
@@ -49,18 +50,29 @@ export default async function ThankYouPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect(`/login?next=${encodeURIComponent(`/thank-you?order=${orderId}`)}`);
-  }
-
-  const { data: foundOrder } = UUID.test(orderId)
-    ? await supabase
+  let current: OrderWithItems | null = null;
+  if (UUID.test(orderId)) {
+    if (user) {
+      const { data } = await supabase
         .from("orders")
         .select("*, order_items(*)")
         .eq("id", orderId)
-        .maybeSingle<OrderWithItems>()
-    : { data: null };
-  let current: OrderWithItems | null = foundOrder;
+        .maybeSingle<OrderWithItems>();
+      current = data;
+    }
+    // Not one of their own account orders (or not signed in): look for a guest
+    // order with this id. Orders that belong to an account are never returned
+    // this way.
+    if (!current) {
+      const { data } = await createAdminClient()
+        .from("orders")
+        .select("*, order_items(*)")
+        .eq("id", orderId)
+        .is("user_id", null)
+        .maybeSingle<OrderWithItems>();
+      current = data;
+    }
+  }
 
   // A card customer lands here seconds after paying — often before Square's
   // webhook has arrived. Ask Square directly (server-side, with our own API
@@ -72,6 +84,7 @@ export default async function ThankYouPage({
     if (synced.state === "paid") current = { ...current, status: "Processing" };
   }
   const order = current;
+  const isGuest = !!order && !order.user_id;
 
   if (!order) {
     return (
@@ -79,8 +92,8 @@ export default async function ThankYouPage({
         <div className="wrap" style={{ maxWidth: 640, textAlign: "center", paddingTop: 48 }}>
           <h1>We couldn&apos;t find that order</h1>
           <p style={{ color: "var(--muted)" }}>
-            It may belong to a different account. You can see every order on your account on the
-            My Orders page.
+            It may belong to a different account. If you&apos;re signed in, you can see every order
+            on your account on the My Orders page.
           </p>
           <Link className="btn" href="/account/orders" style={{ display: "inline-block", marginTop: 12 }}>
             Go to My Orders
@@ -110,7 +123,7 @@ export default async function ThankYouPage({
         value={amountPaid}
         paid={paid}
         buyer={{
-          email: order.shipping_email ?? user.email,
+          email: order.shipping_email ?? user?.email,
           phone: order.shipping_phone,
           name: order.shipping_name,
           street: order.shipping_address_line1,
@@ -132,7 +145,7 @@ export default async function ThankYouPage({
               </p>
               <p style={{ color: "var(--muted)", margin: 0 }}>
                 A confirmation email is on its way to{" "}
-                <strong style={{ color: "var(--ink)" }}>{order.shipping_email ?? user.email}</strong>.
+                <strong style={{ color: "var(--ink)" }}>{order.shipping_email ?? user?.email}</strong>.
                 {order.delivery_method === "local"
                   ? "This is a free local delivery order — we'll deliver it same or next day and email you when it's on the way."
                   : "We'll email your tracking number as soon as it ships."}
@@ -148,9 +161,15 @@ export default async function ThankYouPage({
               </p>
               <p style={{ color: "var(--muted)", margin: 0 }}>
                 {order.payment_method === "bitcoin"
-                  ? "Bitcoin payments usually confirm within about an hour. This page updates by itself — you can leave it open or check My Orders later."
+                  ? isGuest
+                    ? "Bitcoin payments usually confirm within about an hour. This page updates by itself, and we'll email you when it confirms."
+                    : "Bitcoin payments usually confirm within about an hour. This page updates by itself — you can leave it open or check My Orders later."
                   : order.payment_method === "square"
-                  ? "Card payments usually confirm within seconds. This page updates by itself — if you haven't paid yet, finish from the My Orders page."
+                  ? isGuest
+                    ? "Card payments usually confirm within seconds. This page updates by itself — if you haven't paid yet, go back to your cart and check out again."
+                    : "Card payments usually confirm within seconds. This page updates by itself — if you haven't paid yet, finish from the My Orders page."
+                  : isGuest
+                  ? "If you already sent it, this page will update shortly. Otherwise place the order again from your cart."
                   : "If you already sent it, this page will update shortly. Otherwise finish paying from the My Orders page."}
               </p>
             </>
@@ -194,12 +213,20 @@ export default async function ThankYouPage({
           </div>
 
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginTop: 24 }}>
-            <Link className="btn" href="/account/orders">
-              Track my order
-            </Link>
-            <Link className="btn btn-outline" href="/shop/all">
-              Keep shopping
-            </Link>
+            {isGuest ? (
+              <Link className="btn" href="/shop/all">
+                Keep shopping
+              </Link>
+            ) : (
+              <>
+                <Link className="btn" href="/account/orders">
+                  Track my order
+                </Link>
+                <Link className="btn btn-outline" href="/shop/all">
+                  Keep shopping
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

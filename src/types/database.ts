@@ -85,7 +85,8 @@ export interface CartLine {
 export interface Order {
   id: string;
   order_number: string;
-  user_id: string;
+  // null for a guest order (checked out without an account).
+  user_id: string | null;
   status: OrderStatus;
   tracking_number: string | null;
   subtotal: number;

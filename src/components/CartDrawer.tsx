@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/lib/cart/CartContext";
 import { createClient } from "@/lib/supabase/client";
@@ -59,8 +58,9 @@ const EMPTY_SHIPPING: ShippingDetails = {
 export default function CartDrawer() {
   const { items, removeItem, clear, setPromoLine, subtotal, isDrawerOpen, closeDrawer } = useCart();
   const { product: freeBacProduct, loaded: freeBacLoaded } = useFreeBacProduct();
-  const router = useRouter();
   const [waiverChecked, setWaiverChecked] = useState(false);
+  // True when checking out without an account (guest checkout).
+  const [isGuest, setIsGuest] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // `100dvh` (globals.css) reacts to Safari's OWN chrome collapsing
@@ -299,20 +299,15 @@ export default function CartDrawer() {
   async function handleContinueToShipping() {
     setError(null);
 
-    // Checkout requires a real, logged-in account — that's what lets an
-    // order be tied to a specific customer under Row Level Security,
-    // instead of trusting a typed-in email address the way the design
-    // prototype's mock checkout did.
+    // An account is optional: a signed-in customer's order is tied to their
+    // account (points, order history under Row Level Security); anyone else
+    // checks out as a guest and is identified by the email they enter. The
+    // checkout routes enforce the guest rules server-side.
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
-    if (!user) {
-      closeDrawer();
-      router.push("/login?next=/account/orders");
-      return;
-    }
+    setIsGuest(!user);
 
     if (!hasPaidItem) {
       setError("Add at least one item you're paying for to check out — a cart can't be only free, points-redeemed rewards.");
@@ -322,7 +317,7 @@ export default function CartDrawer() {
     // Prefill the email with the account's own email so it's one less thing
     // to type, but leave it editable in case shipping confirmation should go
     // to a different inbox.
-    setShipping((s) => ({ ...s, email: s.email || user.email || "" }));
+    setShipping((s) => ({ ...s, email: s.email || user?.email || "" }));
     setStep("shipping");
   }
 
@@ -675,6 +670,13 @@ export default function CartDrawer() {
                 We just need to know where this ships to — you&apos;ll pick how to pay on the
                 next screen.
               </p>
+              {isGuest && (
+                <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "0 0 10px" }}>
+                  You&apos;re checking out as a guest — no account needed, and we&apos;ll email your
+                  confirmation. <a href="/login?next=/account/orders" style={{ color: "var(--orange)", fontWeight: 700 }}>Log in</a>{" "}
+                  instead to earn points on this order.
+                </p>
+              )}
 
               <label htmlFor="ship-name">Full Name</label>
               <input
@@ -1001,8 +1003,8 @@ export default function CartDrawer() {
                         Pay by card →
                       </a>
                       <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
-                        Taking you to Square&apos;s secure page… if nothing happens, tap the button. You can also
-                        pay later from the My Orders page.
+                        Taking you to Square&apos;s secure page… if nothing happens, tap the button.
+                        {isGuest ? "" : " You can also pay later from the My Orders page."}
                       </p>
                     </>
                   )}
@@ -1060,7 +1062,8 @@ export default function CartDrawer() {
                       </a>
                       <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--muted)", lineHeight: 1.5 }}>
                         The payment page opens in a new tab and expires after 60 minutes. Once your payment
-                        confirms, this order updates automatically — track it anytime on the My Orders page.
+                        confirms, this order updates automatically
+                        {isGuest ? " and we'll email you." : " — track it anytime on the My Orders page."}
                       </p>
                     </>
                   )}

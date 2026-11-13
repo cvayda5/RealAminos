@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { guestCheckoutError } from "@/lib/checkout/guest";
 import type { NewOrderPayload, PointTransaction } from "@/types/database";
 import { calculateShippingFee } from "@/lib/shipping/rate";
 import { checkLocalDelivery } from "@/lib/shipping/localDelivery";
@@ -30,9 +32,9 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "Not signed in." }, { status: 401 });
-  }
+  // No login required: a signed-in customer's order is tied to their account
+  // (points, order history); anyone else checks out as a guest, identified by
+  // the email they enter. Guest rules are applied below once the cart is read.
 
   if (!isSquareConfigured()) {
     return NextResponse.json(
@@ -69,6 +71,22 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+
+  // Guest checkout: no points (they belong to an account), a valid email, and
+  // a light limit on unpaid orders per email.
+  if (!user) {
+    if (body.items.some((i) => i.pointTransactionId)) {
+      return NextResponse.json(
+        { error: "Points rewards need an account — log in, or remove the reward from your cart to check out as a guest." },
+        { status: 400 }
+      );
+    }
+    const guestError = await guestCheckoutError(admin, shipping.email);
+    if (guestError) return NextResponse.json({ error: guestError }, { status: 400 });
+  }
+  // Signed-in customers insert under their own session (Row Level Security
+  // enforces user_id); guests have no session, so the server inserts for them.
+  const writer: SupabaseClient = user ? supabase : admin;
 
   // Point-in-time stock check (not a hold/reservation — stock only moves once
   // payment settles). Also resolve+cache each line's real product_id here so
@@ -121,7 +139,7 @@ export async function POST(request: Request) {
 
     for (const id of rewardTxIds) {
       const found = reservations?.find((r) => r.id === id);
-      if (!found || found.user_id !== user.id || found.type !== "redeemed" || found.order_id || found.voided) {
+      if (!found || found.user_id !== user?.id || found.type !== "redeemed" || found.order_id || found.voided) {
         return NextResponse.json(
           { error: "One of your redeemed rewards is no longer valid — remove it from your cart and try again." },
           { status: 400 }
@@ -170,7 +188,7 @@ export async function POST(request: Request) {
   let discountPercent: number;
   try {
     const resolved = await resolveDiscount(admin, body.discountCode, {
-      userEmail: user.email,
+      userEmail: user?.email,
       shippingEmail: shipping.email,
       shippingPhone: shipping.phone,
     });
@@ -201,10 +219,10 @@ export async function POST(request: Request) {
 
   // Insert under the customer's own session — orders_insert_own (see
   // 0001_init.sql) is what actually enforces user_id can't be spoofed.
-  const { data: order, error: orderError } = await supabase
+  const { data: order, error: orderError } = await writer
     .from("orders")
     .insert({
-      user_id: user.id,
+      user_id: user?.id ?? null,
       subtotal,
       discount_code: discountCode,
       discount_percent: discountPercent,
@@ -242,7 +260,7 @@ export async function POST(request: Request) {
     await admin.from("orders").update({ ad_click_id: adClickId }).eq("id", order.id);
   }
 
-  const { error: itemsError } = await supabase.from("order_items").insert([
+  const { error: itemsError } = await writer.from("order_items").insert([
     ...normalizedItems.map((i) => ({
       order_id: order.id,
       product_name: i.productName,
@@ -294,7 +312,9 @@ export async function POST(request: Request) {
     // Staff (is_admin) get Square's actual error text so a setup problem —
     // wrong token, wrong location, sandbox/production mix-up — can be seen
     // right in the cart. Everyone else just gets the friendly message.
-    const { data: staff } = await supabase.from("profiles").select("is_admin").eq("id", user.id).single();
+    const { data: staff } = user
+      ? await supabase.from("profiles").select("is_admin").eq("id", user.id).single()
+      : { data: null };
     const detail = staff?.is_admin && err instanceof Error ? ` [Admin detail: ${err.message}]` : "";
     return NextResponse.json(
       { error: `Couldn't start the card payment — please try again, or choose Zelle or Bitcoin.${detail}` },

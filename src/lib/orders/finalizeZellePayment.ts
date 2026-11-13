@@ -203,6 +203,8 @@ export async function awardZellePointsOnShip(
   order: Pick<OrderWithItems, "id" | "order_number" | "user_id" | "payment_method" | "total" | "subtotal">
 ): Promise<void> {
   if (order.payment_method !== "zelle" && order.payment_method !== "bitcoin" && order.payment_method !== "square") return;
+  // Guest orders have no account to credit.
+  if (!order.user_id) return;
 
   const pointsEarned = Math.floor(order.total ?? order.subtotal);
   if (pointsEarned <= 0) return;

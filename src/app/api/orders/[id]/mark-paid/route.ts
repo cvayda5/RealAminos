@@ -31,9 +31,10 @@ export async function POST(request: Request, { params }: { params: { id: string 
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "Not signed in." }, { status: 401 });
-  }
+  // Signed-in customers can only confirm their own orders. A guest order (no
+  // user_id) is confirmed with its order id, which is unguessable and only ever
+  // shown to the person who placed it — the same 20-minute window applies, and
+  // staff still verify the money before shipping.
 
   const admin = createAdminClient();
 
@@ -48,7 +49,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   // privileged writes right after) — so it's checked by hand instead.
   // Returning the same "not found" for a missing order and someone else's
   // order avoids confirming/denying that a given order id exists at all.
-  if (fetchError || !order || order.user_id !== user.id) {
+  if (fetchError || !order || (order.user_id !== null && order.user_id !== user?.id)) {
     return NextResponse.json(
       {
         error:
