@@ -18,6 +18,7 @@
 import type { OrderWithItems } from "@/types/database";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { sendAdminOrderNotification } from "@/lib/email/sendAdminOrderNotification";
+import { sendMetaPurchaseOnce } from "@/lib/meta/capi";
 
 export async function notifyAdminNewOrder(
   admin: ReturnType<typeof createAdminClient>,
@@ -27,6 +28,11 @@ export async function notifyAdminNewOrder(
   if (order.payment_method !== "zelle" && order.payment_method !== "bitcoin" && order.payment_method !== "square") {
     return;
   }
+
+  // Report the sale to Meta's Conversions API too (its own once-per-order
+  // claim, and it never throws) — this is the one place every paid order
+  // passes through exactly once, whether it was paid by card, Bitcoin or Zelle.
+  await sendMetaPurchaseOnce(admin, order);
 
   try {
     const { data: claimed, error: claimError } = await admin

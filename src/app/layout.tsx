@@ -6,6 +6,8 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteGate from "@/components/SiteGate";
 import CartDrawer from "@/components/CartDrawer";
 import PromoBanner from "@/components/PromoBanner";
+import MetaPixelEvents from "@/components/MetaPixelEvents";
+import { META_PIXEL_ID } from "@/lib/meta/config";
 
 const SITE_URL = "https://shoprealaminos.com";
 const SITE_TITLE = "RealAminos — Research Compounds";
@@ -123,6 +125,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             __html: `window.dataLayer = window.dataLayer || [];\nfunction gtag(){dataLayer.push(arguments);}\ngtag('js', new Date());\ngtag('config', 'AW-16694066039');\ngtag('config', 'AW-18518215793');`,
           }}
         />
+        {/* Meta (Facebook / Instagram) Pixel — Meta's standard install snippet:
+            it sets up the fbq queue and loads fbevents.js, then registers the
+            pixel. PageView is NOT fired here; MetaPixelEvents (in the body)
+            fires it on first load and on every in-site page change. Purchase
+            is also reported from the server (lib/meta/capi.ts). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${META_PIXEL_ID}');`,
+          }}
+        />
         {/* Applies a saved "View as iPhone/Computer" choice (see
             ViewModeToggle.tsx) before the page paints, so a returning
             visitor who forced mobile view doesn't see a flash of the
@@ -140,6 +152,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSON_LD) }}
         />
         <CartProvider>
+          <MetaPixelEvents />
           <SiteGate />
           <PromoBanner />
           <SiteHeader userEmail={user?.email ?? null} />

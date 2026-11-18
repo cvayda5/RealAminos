@@ -9,6 +9,7 @@ import { checkLocalDelivery } from "@/lib/shipping/localDelivery";
 import { resolveVariant } from "@/lib/inventory/resolveVariant";
 import { resolveDiscount } from "@/lib/checkout/resolveDiscount";
 import { readAdClickId } from "@/lib/ads/adClickId";
+import { readMetaTracking } from "@/lib/meta/capi";
 import { bulkUnitPrice } from "@/lib/promotions/bulkPricing";
 import { buildFreeBacItem, extractFreeBacRequest } from "@/lib/promotions/freeBacWater";
 
@@ -260,6 +261,12 @@ export async function POST(request: Request) {
   if (adClickId) {
     await admin.from("orders").update({ ad_click_id: adClickId }).eq("id", order.id);
   }
+
+  // Same idea for Meta (Facebook / Instagram) ads: keep the buyer's Meta
+  // browser IDs, IP and browser string so the server-side Purchase event
+  // (lib/meta/capi.ts) can be matched to the ad click. Best-effort and silent
+  // until 0040_meta_tracking.sql has been run — it never blocks a checkout.
+  await admin.from("orders").update({ meta_tracking: readMetaTracking() }).eq("id", order.id);
 
   const { error: itemsError } = await writer.from("order_items").insert([
     ...normalizedItems.map((i) => ({

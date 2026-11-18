@@ -22,6 +22,7 @@
 //     fires the conversion — on its own the moment the payment lands.
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { trackMeta } from "@/lib/meta/pixel";
 
 // Purchase conversion actions — one per Google Ads account. The Google tag
 // for each account (AW-…) is configured in the root layout.
@@ -46,6 +47,9 @@ interface Props {
   value: number;
   paid: boolean;
   buyer?: Buyer;
+  // Generic product IDs + item count for the Meta Purchase event (no names).
+  contentIds?: string[];
+  numItems?: number;
 }
 
 // Build the enhanced-conversions payload from whatever we have. Phone must be
@@ -76,13 +80,38 @@ function userData(b?: Buyer): Record<string, unknown> | null {
   return Object.keys(data).length ? data : null;
 }
 
-export default function ThankYouTracker({ orderNumber, value, paid, buyer }: Props) {
+export default function ThankYouTracker({ orderNumber, value, paid, buyer, contentIds, numItems }: Props) {
   const router = useRouter();
 
   useEffect(() => {
     if (!paid) {
       const id = setInterval(() => router.refresh(), POLL_MS);
       return () => clearInterval(id);
+    }
+
+    // Meta Pixel "Purchase" — once per order. The event ID matches the one the
+    // server sends through the Conversions API (lib/meta/capi.ts), so Meta
+    // counts the sale a single time. Value, currency and generic product IDs
+    // only — nothing identifying goes through the browser.
+    const metaKey = `realaminos_meta_purchase_${orderNumber}`;
+    try {
+      if (!localStorage.getItem(metaKey)) {
+        trackMeta(
+          "Purchase",
+          {
+            value,
+            currency: "USD",
+            content_type: "product",
+            content_ids: contentIds ?? [],
+            num_items: numItems ?? 0,
+          },
+          `purchase_${orderNumber}`
+        );
+        localStorage.setItem(metaKey, "1");
+      }
+    } catch {
+      // Storage blocked: the shared event ID still lets Meta drop a repeat.
+      trackMeta("Purchase", { value, currency: "USD", content_type: "product" }, `purchase_${orderNumber}`);
     }
 
     const key = `realaminos_purchase_conversion_${orderNumber}`;
@@ -113,7 +142,7 @@ export default function ThankYouTracker({ orderNumber, value, paid, buyer }: Pro
     } catch {
       // Tracking must never get in the way of the page.
     }
-  }, [paid, orderNumber, value, router, buyer]);
+  }, [paid, orderNumber, value, router, buyer, contentIds, numItems]);
 
   return null;
 }

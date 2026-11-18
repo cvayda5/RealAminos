@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { ProductWithVariants } from "@/types/database";
 import AddToCartBox from "./AddToCartBox";
 import ProductVisualCarousel from "./ProductVisualCarousel";
+import MetaViewContent from "@/components/MetaViewContent";
 
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -51,6 +52,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
 
   return (
     <main className="site-main">
+      <MetaViewContent productId={product.id} value={prices.length > 0 ? Math.min(...prices) : 0} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}

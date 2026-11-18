@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useCart } from "@/lib/cart/CartContext";
 import { createClient } from "@/lib/supabase/client";
+import { trackMeta } from "@/lib/meta/pixel";
 import type { ShippingDetails } from "@/types/database";
 import { calculateShippingFee, FREE_SHIPPING_THRESHOLD } from "@/lib/shipping/rate";
 import {
@@ -318,6 +319,14 @@ export default function CartDrawer() {
     // to type, but leave it editable in case shipping confirmation should go
     // to a different inbox.
     setShipping((s) => ({ ...s, email: s.email || user?.email || "" }));
+    // Meta Pixel "InitiateCheckout" — cart value + generic product IDs only.
+    trackMeta("InitiateCheckout", {
+      content_type: "product",
+      content_ids: items.filter((i) => !i.isPromo && !i.isReward).map((i) => i.productId),
+      num_items: items.reduce((n, i) => n + i.qty, 0),
+      value: subtotal,
+      currency: "USD",
+    });
     setStep("shipping");
   }
 

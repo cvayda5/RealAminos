@@ -8,6 +8,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { CartLine } from "@/types/database";
 import { bulkLineTotal } from "@/lib/promotions/bulkPricing";
+import { trackMeta } from "@/lib/meta/pixel";
 
 interface CartContextValue {
   items: CartLine[];
@@ -62,6 +63,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, hydrated]);
 
   function addItem(line: CartLine) {
+    // Meta Pixel "AddToCart" — paid lines only, product ID + value, no names.
+    if (!line.isReward && !line.isPromo) {
+      trackMeta("AddToCart", {
+        content_type: "product",
+        content_ids: [line.productId],
+        value: Math.round(line.unitPrice * line.qty * 100) / 100,
+        currency: "USD",
+      });
+    }
     setItems((prev) => {
       // Reward lines never merge — each redemption is its own reservation
       // (its own pointTransactionId) even if it happens to be the same

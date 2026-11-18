@@ -122,6 +122,8 @@ export default async function ThankYouPage({
         orderNumber={order.order_number}
         value={amountPaid}
         paid={paid}
+        contentIds={Array.from(new Set(order.order_items.map((i) => i.product_id).filter((x): x is string => !!x)))}
+        numItems={itemCount}
         buyer={{
           email: order.shipping_email ?? user?.email,
           phone: order.shipping_phone,

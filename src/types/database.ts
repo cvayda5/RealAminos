@@ -125,6 +125,10 @@ export interface Order {
   // buyer arrived from an ad — see 0034_order_ad_click_id.sql. Null/missing
   // for orders from before that migration or not from an ad.
   ad_click_id?: string | null;
+  // Meta (Facebook / Instagram) tracking — see 0040_meta_tracking.sql and
+  // lib/meta/capi.ts. Missing/null until that migration has been run.
+  meta_tracking?: { fbp?: string | null; fbc?: string | null; ip?: string | null; ua?: string | null } | null;
+  meta_purchase_sent_at?: string | null;
   // How much the 5% Zelle discount knocked off (total + shipping_fee) for
   // this order. Always 0 for a 'card' order. Subtract this from
   // total + shipping_fee to get what the customer actually owes/paid via
