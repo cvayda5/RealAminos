@@ -57,6 +57,13 @@ export interface ProductVariant {
   // this by hand, and 0011_inventory.sql's decrement_variant_stock(), which
   // lowers it automatically every time a real order finalizes.
   stock: number;
+  // Optional vial photo for this exact size (see 0041). When set, the product
+  // page swaps to it as soon as the size is selected; null uses the product's
+  // own photo.
+  image_url: string | null;
+  // Optional expected restock date (YYYY-MM-DD). While the size is out of
+  // stock and the date is still ahead, the storefront shows "ETA N weeks".
+  restock_eta: string | null;
 }
 
 export interface ProductWithVariants extends Product {

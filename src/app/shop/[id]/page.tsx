@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { ProductWithVariants } from "@/types/database";
 import AddToCartBox from "./AddToCartBox";
 import ProductVisualCarousel from "./ProductVisualCarousel";
+import { VariantSelectionProvider } from "./VariantSelection";
 import MetaViewContent from "@/components/MetaViewContent";
 
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
@@ -61,6 +62,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         <Link href="/shop/all">Shop</Link> / <span>{product.category}</span> / <span>{product.name}</span>
       </div>
 
+      <VariantSelectionProvider variants={sortedVariants}>
       <div className="pd-layout">
         <ProductVisualCarousel
           imageUrl={product.image_url}
@@ -181,6 +183,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           </div>
         </div>
       </div>
+      </VariantSelectionProvider>
     </main>
   );
 }

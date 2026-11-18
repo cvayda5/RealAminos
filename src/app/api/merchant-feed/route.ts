@@ -66,7 +66,6 @@ export async function GET() {
       const description = escapeXml(
         `${product.description ?? `${product.name} — a research compound supplied for laboratory research use.`} ${RUO_DISCLAIMER}`
       );
-      const imageLink = absoluteImageUrl(product.image_url!);
       const link = `${SITE_URL}/shop/${product.id}`;
 
       return product.product_variants
@@ -76,6 +75,8 @@ export async function GET() {
           const id = `${product.id}-${variant.size}`.replace(/\s+/g, "");
           const title = escapeXml(`${product.name} (${variant.size})`);
           const availability = variant.stock > 0 ? "in stock" : "out of stock";
+          // A size can carry its own vial photo (e.g. GLP-3 (RT) 20mg).
+          const imageLink = absoluteImageUrl(variant.image_url ?? product.image_url!);
 
           return `
     <item>

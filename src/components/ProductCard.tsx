@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ProductWithVariants } from "@/types/database";
 import { getSitePriceDisplay } from "@/lib/promotions/siteSale";
+import { etaLabel } from "@/lib/inventory/eta";
 
 export default function ProductCard({ product }: { product: ProductWithVariants }) {
   const inStock = product.product_variants.filter((v) => v.stock > 0);
@@ -14,6 +15,7 @@ export default function ProductCard({ product }: { product: ProductWithVariants 
   const candidates = inStock.length > 0 ? inStock : product.product_variants;
   const cheapestVariant = candidates.reduce((min, v) => (v.price < min.price ? v : min), candidates[0]);
   const priceFrom = cheapestVariant?.price ?? Infinity;
+  const eta = comingSoon ? etaLabel(candidates.map((v) => v.restock_eta).find(Boolean)) : null;
   const priceDisplay = getSitePriceDisplay(cheapestVariant ?? { price: priceFrom, compare_at_price: null });
 
   return (
@@ -41,6 +43,12 @@ export default function ProductCard({ product }: { product: ProductWithVariants 
           {comingSoon ? (
             <div className="price price-soon">
               Coming Soon
+              {eta && (
+                <>
+                  <br />
+                  <small>{eta}</small>
+                </>
+              )}
             </div>
           ) : priceDisplay.active ? (
             <div className="price">

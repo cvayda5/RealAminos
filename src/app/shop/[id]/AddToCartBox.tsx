@@ -5,6 +5,8 @@ import { useCart } from "@/lib/cart/CartContext";
 import type { ProductWithVariants } from "@/types/database";
 import { getSitePriceDisplay } from "@/lib/promotions/siteSale";
 import { getBulkPercent, bulkUnitPrice } from "@/lib/promotions/bulkPricing";
+import { etaLabel } from "@/lib/inventory/eta";
+import { useVariantSelection } from "./VariantSelection";
 
 // The four quantity-pricing cards. The discount % comes from the one shared
 // tier table (lib/promotions/bulkPricing.ts), so these can never disagree
@@ -29,15 +31,14 @@ function Vial() {
 
 export default function AddToCartBox({ product }: { product: ProductWithVariants }) {
   const { addItem } = useCart();
-  // Default to the first size that's actually in stock, if any — landing on
-  // an out-of-stock size by default would make an otherwise-available
-  // product look unbuyable at a glance.
-  const firstInStockIdx = product.product_variants.findIndex((v) => v.stock > 0);
-  const [selectedIdx, setSelectedIdx] = useState(firstInStockIdx === -1 ? 0 : firstInStockIdx);
+  // The selected size is shared with the photo carousel (see
+  // VariantSelection.tsx), which defaults it to the first in-stock size.
+  const { selectedIdx, setSelectedIdx } = useVariantSelection();
   const [qty, setQty] = useState(1);
 
   const variant = product.product_variants[selectedIdx];
   const outOfStock = !variant || variant.stock <= 0;
+  const eta = outOfStock ? etaLabel(variant?.restock_eta) : null;
 
   // Which tier card is highlighted: the highest tier the current quantity
   // has reached. (A tier you can't reach — more units than are in stock —
@@ -68,6 +69,7 @@ export default function AddToCartBox({ product }: { product: ProductWithVariants
         <div className="size-grid">
           {product.product_variants.map((v, i) => {
             const unavailable = v.stock <= 0;
+            const comingSoon = unavailable && etaLabel(v.restock_eta) !== null;
             const priceInfo = getSitePriceDisplay(v);
             return (
               <div
@@ -78,7 +80,7 @@ export default function AddToCartBox({ product }: { product: ProductWithVariants
               >
                 {v.size} —{" "}
                 {unavailable ? (
-                  "Out of Stock"
+                  comingSoon ? "Coming Soon" : "Out of Stock"
                 ) : priceInfo.active ? (
                   <>
                     <span style={{ textDecoration: "line-through", opacity: 0.6, marginRight: 3 }}>
@@ -166,7 +168,7 @@ export default function AddToCartBox({ product }: { product: ProductWithVariants
             fontWeight: 600,
           }}
         >
-          Out of Stock — Coming Soon
+          Out of Stock — Coming Soon{eta ? ` · ${eta}` : ""}
         </div>
       ) : (
         <div className="qty-row">

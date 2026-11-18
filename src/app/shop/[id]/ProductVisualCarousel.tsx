@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useVariantSelection } from "./VariantSelection";
 
 // Slide 1 is always the product visual — the real vial photo when the
 // product has one (image_url), falling back to the old generic CSS vial
@@ -25,6 +26,16 @@ export default function ProductVisualCarousel({
   const slideCount = hasCoa ? 2 : 1;
   const [index, setIndex] = useState(0);
 
+  // A size can carry its own vial photo (e.g. GLP-3 (RT) 20mg). Show it when
+  // that size is selected, otherwise the product's photo — and jump back to
+  // the photo slide so the change is visible even if the COA slide was open.
+  const { variants, selectedIdx } = useVariantSelection();
+  const variantImage = variants[selectedIdx]?.image_url ?? null;
+  const shownImage = variantImage ?? imageUrl;
+  useEffect(() => {
+    if (variantImage) setIndex(0);
+  }, [selectedIdx, variantImage]);
+
   function go(delta: number) {
     setIndex((i) => (i + delta + slideCount) % slideCount);
   }
@@ -33,9 +44,9 @@ export default function ProductVisualCarousel({
     <div className="pd-visual">
       <div className="pd-slide-track" style={{ transform: `translateX(-${index * 100}%)` }}>
         <div className="pd-slide">
-          {imageUrl ? (
+          {shownImage ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt={productName} className="product-photo" />
+            <img src={shownImage} alt={productName} className="product-photo" />
           ) : (
             <>
               <div className="cap-lg" />
